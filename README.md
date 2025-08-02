@@ -2,11 +2,11 @@
 Implementação de um compilador em Python para uma linguagem apenas de expressões constantes. Projeto utilizado para obtenção de nota na disciplina de Construção de Compiladores I. 
 
  A gramática para a linguagem EC1 é:
- <programa> ::= <expressao>
- <expressao> ::= (<expressao> <operador> <expressao>) | <literal-inteiro>
- <operador> ::= + |- | * | /
- <literal-inteiro> ::= <digito>+
- <digito> ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+ programa ::= expressao
+ expressao ::= (expressao operador expressao) | literal-inteiro
+ operador ::= + |- | * | /
+ literal-inteiro ::= digito+
+ digito ::= 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
 
  Etapas implementadas:
  1. Analisador léxico (Tokenização) - Lexer;
