@@ -1,7 +1,7 @@
 # compiladores-linguagem_ec1
 Implementação de um compilador em Python para uma linguagem apenas de expressões constantes. Projeto utilizado para obtenção de nota na disciplina de Construção de Compiladores I. 
 
- A gramática para a linguagem EC1 é:
+ A gramática para a linguagem EC1 é: <br><br>
  programa ::= expressao <br>
  expressao ::= (expressao operador expressao) | literal-inteiro <br>
  operador ::= + |- | * | / <br>
