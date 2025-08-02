@@ -7,12 +7,15 @@ Sequência de execução e saída:
 3. Impressão de tokens e AST
 4. Geração de grafo da AST
 """
+
+import os
 import sys
 from analisadorLexicoEC import AnalizadorLexico
 from analisadorSintaticoEC import Parser, ParserError
 from arvore import Exp
 from criaGrafo import build_rich_tree
 from rich import print as rprint
+from gerador import gera_codigo
 
 
 def main():
@@ -54,6 +57,14 @@ def main():
     rich_tree = build_rich_tree(ast)
     print("\n--- Printa árvore com Rich ---")
     rprint(rich_tree)
+
+    print("\n--- Gerando código Assembly ---")
+    os.makedirs("assemblys", exist_ok=True)
+    asm = gera_codigo(ast)
+    out_path = os.path.join("assemblys", "saida.s")
+    with open(out_path, 'w') as f:
+        f.write(asm)
+    print(f"Assembly gerado em: {out_path}")
 
 
 if __name__ == '__main__':
