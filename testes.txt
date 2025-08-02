@@ -1,0 +1,8 @@
+(31 + (912 * 11))
+78
+(31 + (912 * 11)    - Gera erro sintático pois falta um ')'.
+( + 78)             - Gera erro sintático pois o formato da expressão é inválido.
+( 72 + a )          - Gera erro Léxico.
+( 89 + 230 ()       - Gera erro sintático pois há um '(' solto.
+( 5 ++ 10 )         - Gera erro sintático pois o formato da expressão é inválido.
+(47 98)             - Gera erro sintático pois espera um tipo operador.
