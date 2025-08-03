@@ -1,7 +1,7 @@
 # João Victor Lourenço da Silva (20220005997)
 
-from token_tipos import Numero, Operadores, Pontuacao, Error
-from lex_token import Token
+from helpers.token_tipos import Numero, Operadores, Pontuacao, Error
+from helpers.token import Token
 
 class AnalizadorLexico:
     def __init__(self, texto: str):

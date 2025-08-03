@@ -3,13 +3,17 @@
   .globl _start
 
 _start:
-    mov $30, %rax
+    mov $5, %rax
     push %rax
-    mov $2, %rax
+    mov $3, %rax
     push %rax
-    mov $2, %rax
+    mov $6, %rax
     pop %rbx
-    add %rbx, %rax
+    div %rbx
+    push %rax
+    mov $15, %rax
+    pop %rbx
+    sub %rbx, %rax
     pop %rbx
     add %rbx, %rax
 

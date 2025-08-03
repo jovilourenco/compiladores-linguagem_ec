@@ -5,15 +5,15 @@ Sequência de execução e saída:
 1. Análise Léxica
 2. Análise Sintática
 3. Impressão de tokens e AST
-4. Geração de grafo da AST
+4. Print de árvore com rich
 """
 
 import os
 import sys
 from analisadorLexicoEC import AnalizadorLexico
 from analisadorSintaticoEC import Parser, ParserError
-from arvore import Exp
-from criaGrafo import build_rich_tree
+from helpers.arvore import Exp
+from helpers.arvore_print_rich import build_rich_tree
 from rich import print as rprint
 from gerador import gera_codigo
 

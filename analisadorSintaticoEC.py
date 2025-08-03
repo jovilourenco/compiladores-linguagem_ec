@@ -1,9 +1,10 @@
 # João Victor Lourenço da Silva (20220005997)
 
 from typing import List
-from lex_token import Token
-from token_tipos import Numero, Operadores, Pontuacao, Error
-from arvore import Exp, Const, OpBin
+
+from helpers.token import Token
+from helpers.token_tipos import Numero, Operadores, Pontuacao, Error
+from helpers.arvore import Exp, Const, OpBin
 
 class ParserError(Exception):
     pass

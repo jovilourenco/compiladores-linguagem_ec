@@ -1,6 +1,7 @@
+# João Victor Lourenço da Silva (20220005997)
 
-from arvore import Const, OpBin
-from token_tipos import Operadores
+from helpers.arvore import Const, OpBin
+from helpers.token_tipos import Operadores
 
 # ===== Modelos fixos assembly =====
 
@@ -23,15 +24,12 @@ def footer():
 # ===== Gerador =====
 
 def gen_const(lit: int) -> str:
-    """
-    Gera instrução para carregar constante em %rax.
-    """
+    # Geração de código de uma constante
     return f"    mov ${lit}, %rax\n"
 
 
 def opBin_soma(opE_codigo: str, opD_codigo: str) -> str:
-    # Gera código do operador esquerdo e do direito:
-
+    # Gera código do operador ESQUERDO e dps DIREITO:
     return (
         opE_codigo +
         "    push %rax\n" +
@@ -40,15 +38,44 @@ def opBin_soma(opE_codigo: str, opD_codigo: str) -> str:
         "    add %rbx, %rax\n"
     )
 
+def opBin_sub(opE_codigo: str, opD_codigo: str) -> str:
+    # Gera código do operador DIREITO e dps ESQUERDO:
+    return (
+        opD_codigo +
+        "    push %rax\n" +
+        opE_codigo +
+        "    pop %rbx\n" +
+        "    sub %rbx, %rax\n"
+    )
+
+def opBin_mul(opE_codigo: str, opD_codigo: str) -> str:
+    # Gera código do operador ESQUERDO e dps DIREITO:
+    return (
+        opE_codigo +
+        "    push %rax\n" +
+        opD_codigo +
+        "    pop %rbx\n" +
+        "    mul %rbx\n"
+    )
+
+
+def opBin_div(opE_codigo: str, opD_codigo: str) -> str:
+    # Gera código do operador DIREITO e dps ESQUERDO:
+    return (
+        opD_codigo +
+        "    push %rax\n" +
+        opE_codigo +
+        "    pop %rbx\n" +
+        "    div %rbx\n"
+    )
+
 # ===== Função principal =====
 
 def gera_codigo(ast) -> str:
-    # Recursão que o professor montou.
 
     asm = header()
 
-    def rec(arv) -> str:
-        # retorna o trecho de assembly que deixa o valor de arv em %rax
+    def rec(arv) -> str: # Recursão que o professor montou.
         if isinstance(arv, Const):
             return gen_const(arv.valor)
         if isinstance(arv, OpBin):
@@ -56,6 +83,18 @@ def gera_codigo(ast) -> str:
                 left = rec(arv.opEsq)
                 right = rec(arv.opDir)
                 return opBin_soma(left, right)
+            if arv.operador == Operadores.SUBTRACAO:
+                left = rec(arv.opEsq)
+                right = rec(arv.opDir)
+                return opBin_sub(left, right)
+            if arv.operador == Operadores.MULTIPLIC:
+                left = rec(arv.opEsq)
+                right = rec(arv.opDir)
+                return opBin_mul(left, right)
+            if arv.operador == Operadores.DIVISAO:
+                left = rec(arv.opEsq)
+                right = rec(arv.opDir)
+                return opBin_div(left, right)
             else:
                 raise NotImplementedError(f"Operação {arv.operador} não suportada ainda")
         raise NotImplementedError(f"Nó desconhecido: {arv}")
