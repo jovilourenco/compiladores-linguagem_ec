@@ -47,9 +47,9 @@ A saída será printada no console. Só o gerador não pode ser executado indepe
 
 *Após rodar o código*, podemos compilar e executar o assembly gerado em `assemblys`. Para isso, podemos executar os seguintes comandos:
 
-`cd assemblys`
-`as --64 -o saida.o saida.s`
-`ld -o saida saida.o`
-`./saida`
+`cd assemblys` <br>
+`as --64 -o saida.o saida.s` <br>
+`ld -o saida saida.o` <br>
+`./saida` <br>
 
 Obs.: Assembly x86-64 AT&T
