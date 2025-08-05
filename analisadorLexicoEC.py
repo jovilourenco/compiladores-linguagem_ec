@@ -82,7 +82,7 @@ class AnalizadorLexico:
 if __name__ == '__main__':
     import sys
     if len(sys.argv) != 2:
-        print("Uso: python -m lexer.lexer <arquivo.ec1>")
+        print("Uso: python analisadorLexicoEC.py <arquivo.txt>")
         sys.exit(1)
 
     with open(sys.argv[1], 'r') as f:

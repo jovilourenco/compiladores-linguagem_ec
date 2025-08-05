@@ -53,3 +53,7 @@ A saída será printada no console. Só o gerador não pode ser executado indepe
 `./saida` <br>
 
 Obs.: Assembly x86-64 AT&T
+
+### Dúvidas para apresentação:
+
+- Dada a expressão: ( 72 + a ), o analisador léxico indica o token com erro, mas não para a compilação. Logo, isso gerará, em seguida, erro sintático por não ter um formato de expressão que contenha a classe LEX_ERROR. Um erro sintático não gera o código assembly.

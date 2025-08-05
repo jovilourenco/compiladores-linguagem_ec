@@ -53,7 +53,7 @@ def main():
     print("\n--- Resultado da avaliação ---")
     print(ast.avaliador())
 
-    # 5) Geração do grafo da AST
+    # 5) Geração da AST
     rich_tree = build_rich_tree(ast)
     print("\n--- Printa árvore com Rich ---")
     rprint(rich_tree)

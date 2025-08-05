@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from .token_tipos import Operadores  # reutiliza o enum de operadores definido no lexer
+from .token_tipos import Operadores  # reutiliza os operadores
 
 class Exp(ABC):
 
