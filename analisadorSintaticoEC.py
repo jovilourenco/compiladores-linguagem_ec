@@ -24,6 +24,7 @@ class Parser:
             self.pos += 1
 
     def verificaProxToken(self, tipo_esperado) -> Token: # Recebe o tipo que deve vir no próximo token.
+        # Verifica que o token atual é do tipo esperado e o consome;
         tok = self.get()
         if tok is None or tok.tipo != tipo_esperado:
             pos = tok.pos if tok else self.pos
@@ -97,6 +98,8 @@ if __name__ == '__main__':
         texto = f.read()
     lexer = AnalizadorLexico(texto)
     tokens = lexer.tokenizador()
+
+    print(tokens)
 
     # Análise Sintática
     parser = Parser(tokens)

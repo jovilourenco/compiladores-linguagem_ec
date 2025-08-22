@@ -57,3 +57,14 @@ Obs.: Assembly x86-64 AT&T
 ### Dúvidas para apresentação:
 
 - Dada a expressão: ( 72 + a ), o analisador léxico indica o token com erro, mas não para a compilação. Logo, isso gerará, em seguida, erro sintático por não ter um formato de expressão que contenha a classe LEX_ERROR. Um erro sintático não gera o código assembly.
+
+## Gramática da linguagem EC2
+
+A linguagem EC2 trata-se de uma continuação/aperfeiçoamento da gramática EC1. O objetivo é mudar o analisador sintático para permitir que as expressões sejam escritas com menos parênteses, usando as regras de precedência e associatividade.
+
+A gramática da linguagem EC2 é dada por: <br><br>
+exp_a ::= exp_m ((’+’ | ’-’) exp_m)* <br>
+exp_m ::= prim ((’*’ | ’/’) prim)* <br>
+prim ::= num | ’(’ exp_a ’)’ <br>
+
+Dada essas especificações, foi adicionado o `analisadorSintaticoEC2.py`. Ele segue as mesmas regras de execução e saída dos demais arquivos.
