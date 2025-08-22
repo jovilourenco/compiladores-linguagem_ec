@@ -66,7 +66,7 @@ class Parser:
         esq = self.analisaPrim()
 
         # olhar sem consumir: get()
-        tok = self.get()0
+        tok = self.get()
         # enquanto houver * ou /
         while tok is not None and tok.tipo in (Operadores.MULTIPLIC, Operadores.DIVISAO):
             operador = tok.tipo
