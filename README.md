@@ -1,4 +1,4 @@
-# compiladores-linguagem_ec1
+# compiladores-linguagem_ec
 
 Aluno: João Victor Lourenço da Silva
 Matrícula: 20220005997
