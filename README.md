@@ -67,4 +67,6 @@ exp_a ::= exp_m ((’+’ | ’-’) exp_m)* <br>
 exp_m ::= prim ((’*’ | ’/’) prim)* <br>
 prim ::= num | ’(’ exp_a ’)’ <br>
 
-Dada essas especificações, foi adicionado o `analisadorSintaticoEC2.py`. Ele segue as mesmas regras de execução e saída dos demais arquivos.
+Dada essas especificações, foi adicionado o `analisadorSintaticoEC2.py`. Ele segue as mesmas regras, formas de execução e saída dos demais arquivos.
+
+Para executar TODO o compilador EC2, adicionei o arquivo `mainEC2.py` que utilizará o `analisadorSintaticoEC2.py` como parser. Assim como no EC1, expressões para teste estão no arquivo `teste.txt` e o arquivo usado para execução, de fato, é o `_teste.txt`.
