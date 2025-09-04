@@ -15,6 +15,11 @@ class Pontuacao(Enum):
     PAREN_ESQ = auto()
     PAREN_DIR = auto()
     EOF = auto()
+    IGUAL = auto()            # '=' (atribuição e inicio do resultado)
+    PONTO_VIRGULA = auto()   # ';'
+
+class Identificador(Enum):
+    IDENT = auto()
 
 class Error(Enum):
     LEX_ERROR = auto()

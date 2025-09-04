@@ -10,7 +10,7 @@ Sequência de execução e saída:
 
 import os
 import sys
-from analisadorLexicoEC import AnalizadorLexico
+from analisadorLexicoEV import AnalizadorLexico
 from analisadorSintaticoEC import Parser, ParserError
 from helpers.arvore import Exp
 from helpers.arvore_print_rich import build_rich_tree

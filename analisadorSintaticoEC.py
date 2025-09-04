@@ -87,7 +87,7 @@ class Parser:
 
 if __name__ == '__main__':
     import sys
-    from analisadorLexicoEC import AnalizadorLexico # Primeiro faz a análise léxica
+    from analisadorLexicoEV import AnalizadorLexico # Primeiro faz a análise léxica
 
     if len(sys.argv) != 2:
         print("Uso: python analisadorSintaticoEC.py <arquivo.txt>")

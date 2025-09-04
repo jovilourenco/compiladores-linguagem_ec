@@ -1,18 +1,37 @@
-===== EC1 =====
+===== EV =====
 
-(31 + (912 * 11))
-(5 + (15 - (6 / 3)))
-78
-(31 + (912 * 11)    - Gera erro sintático pois falta um ')'.
-( + 78)             - Gera erro sintático pois o formato da expressão é inválido.
-( 72 + a )          - Gera erro Léxico.
-( 89 + 230 ()       - Gera erro sintático pois há um '(' solto.
-( 5 ++ 10 )         - Gera erro sintático pois o formato da expressão é inválido.
-(47 98)             - Gera erro sintático pois espera um tipo operador.
-( 4 + 3 + 2 )        - Gera erro sintático pois foge do padrão das expressões.
+Para o programa:
 
-===== EC2 =====
+x = (7 + 4) * 12;
+y = x * 3 + 11;
+= (x * y) + (x * 11) + (y * 13)
 
-7 + 5 * 3
-7 * (3 + 2)
-10 - 4 - 2
+A árvore sintática gerada é:
+
+Programa
+├─ Decl: x = 
+│   └─ OpBin(*) 
+│      ├─ OpBin(+)
+│      │  ├─ Const(7)
+│      │  └─ Const(4)
+│      └─ Const(12)
+│
+├─ Decl: y = 
+│   └─ OpBin(+)
+│      ├─ OpBin(*)
+│      │  ├─ Var(x)  (linha=2, pos=22)
+│      │  └─ Const(3)
+│      └─ Const(11)
+│
+└─ Resultado (expressão final) =
+   └─ OpBin(+)
+      ├─ OpBin(+)
+      │  ├─ OpBin(*)
+      │  │  ├─ Var(x)  (linha=3, pos=37)
+      │  │  └─ Var(y)  (linha=3, pos=41)
+      │  └─ OpBin(*)
+      │     ├─ Var(x)  (linha=3, pos=47)
+      │     └─ Const(11)
+      └─ OpBin(*)
+         ├─ Var(y)  (linha=3, pos=58)
+         └─ Const(13)
