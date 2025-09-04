@@ -30,7 +30,7 @@ class Parser:
             pos = tok.pos if tok else self.pos
             linha = tok.linha if tok else '?'
             raise ParserError(
-                f"Erro sintático na linha {linha}, pos {pos}: esperado {tipo_esperado}, encontrado {tok}"
+                f"Erro na linha {linha}, pos {pos}: esperado {tipo_esperado}, encontrado {tok}"
             )
         self.proximo_token()
         return tok
@@ -64,7 +64,7 @@ class Parser:
 
         # nenhum caso válido
         raise ParserError(
-            f"Erro sintático na linha {tok.linha}, pos {tok.pos}: primária inválida, token {tok}"
+            f"Erro na linha {tok.linha}, pos {tok.pos}: primária inválida, token {tok}"
         )
 
     # -------------------------
@@ -110,12 +110,9 @@ class Parser:
 
         return esq
     
-     # -------------------------
-    # decl -> IDENT '=' exp ';'
-    # programa -> decl* '=' exp EOF
-    # -------------------------
+    # Novo parser para a linguagem EV
     def parse_programa(self) -> Programa:
-        declaracoes = []
+        declaracoes = [] # Declarações é o array de Decl(nome,expr,linha,pos) das declarações.
         tok = self.get()
         # ler declarações enquanto houver identificador
         while tok is not None and tok.tipo == Identificador.IDENT:
@@ -139,7 +136,7 @@ class Parser:
         if tok is None or tok.tipo != Pontuacao.IGUAL:
             pos = tok.pos if tok else self.pos
             linha = tok.linha if tok else '?'
-            raise ParserError(f"Erro sintático na linha {linha}, pos {pos}: esperado '=' iniciando expressão final, encontrado {tok}")
+            raise ParserError(f"Erro na linha {linha}, pos {pos}: esperado '=' iniciando expressão final, encontrado {tok}")
         # consumir '='
         self.proximo_token()
         exp_final = self.analisaExpA()

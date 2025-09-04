@@ -8,7 +8,7 @@ from .token_tipos import Operadores  # reutiliza os operadores
 class Exp(ABC):
 
     @abstractmethod
-    def avaliador(self, env: Optional[Dict[str, int]] = None) -> int:
+    def avaliador(self, env: Optional[Dict[str, int]] = None) -> int: #avaliador, agora, recebe env (tabela de símbolos)
         # Obj: Interpreta e retorna o valor da expressão.
         pass
 
@@ -96,8 +96,7 @@ class Decl:
         return f"{self.nome} = {self.expr.gerador()};"
 
 @dataclass
-class Programa:
-    """Raiz: lista de declarações + expressão final."""
+class Programa: # Programa é, de fato, a lista de declarações e o resultado (expressão a ser processada)
     declaracoes: List[Decl]
     resultado: Exp
 

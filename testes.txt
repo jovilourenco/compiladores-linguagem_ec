@@ -1,37 +1,47 @@
-===== EV =====
-
-Para o programa:
+=== Programa válido ===
 
 x = (7 + 4) * 12;
 y = x * 3 + 11;
 = (x * y) + (x * 11) + (y * 13)
 
-A árvore sintática gerada é:
+=== Erro léxico ===
+Identificador começando com digito e seguido por letras
 
-Programa
-├─ Decl: x = 
-│   └─ OpBin(*) 
-│      ├─ OpBin(+)
-│      │  ├─ Const(7)
-│      │  └─ Const(4)
-│      └─ Const(12)
-│
-├─ Decl: y = 
-│   └─ OpBin(+)
-│      ├─ OpBin(*)
-│      │  ├─ Var(x)  (linha=2, pos=22)
-│      │  └─ Const(3)
-│      └─ Const(11)
-│
-└─ Resultado (expressão final) =
-   └─ OpBin(+)
-      ├─ OpBin(+)
-      │  ├─ OpBin(*)
-      │  │  ├─ Var(x)  (linha=3, pos=37)
-      │  │  └─ Var(y)  (linha=3, pos=41)
-      │  └─ OpBin(*)
-      │     ├─ Var(x)  (linha=3, pos=47)
-      │     └─ Const(11)
-      └─ OpBin(*)
-         ├─ Var(y)  (linha=3, pos=58)
-         └─ Const(13)
+x = 237axy + 1;
+= x
+
+=== Erro sintático ===
+Falta o ;
+
+x = 7 + 4
+= x
+
+=== Erro sintático ===
+Falta um '=' para o resultado do programa
+
+x = 1;
+
+=== Erro semântico ===
+Usando variável que não foi declarada ainda
+
+x = 7 + y;
+= x
+
+=== Erro sintático ===
+Ainda da parte de EC1 e EC2, parênteses não fechados
+
+x = (7 + 4;
+= x
+
+=== Erro de execução ===
+Divisão por 0 (só adicionei em EV)
+
+x = 7;
+y = x - 7;
+= x / y
+
+=== Erro léxico ===
+Símbolo inválido
+
+x = 7 @ 3;
+= x
