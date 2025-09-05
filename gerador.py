@@ -23,7 +23,7 @@ def footer():
 
 # ===== Diretivas para variáveis (bss / comuns) =====
 def vars_section(var_names: list[str]) -> str:
-    """Cria diretivas .lcomm para reservar 8 bytes por variável (x86-64)."""
+    # Se tiver variáveis, coloca a section e itera reservando espaços na memória
     if not var_names:
         return ""
     s = "  .section .bss\n"
@@ -84,12 +84,12 @@ def opBin_div(opE_codigo: str, opD_codigo: str) -> str:
 
 def gera_codigo(ast) -> str:
     """
-    Recebe ast que deve ser um Programa (com declaracoes e resultado).
-    Gera:
-      - diretivas .lcomm para variáveis
+    Recebe um Programa (com declaracoes e resultado).
+    e Gera:
+      - variáveis
       - código que avalia cada declaração e armazena o valor em memória
       - código que avalia a expressão final (deixando o resultado em %rax)
-      - chamada ao runtime (imprime_num e sair)
+      - chamada o runtime (imprime_num e sair)
     """
     # coletar nomes de variáveis (na ordem das declarações)
     var_names = []

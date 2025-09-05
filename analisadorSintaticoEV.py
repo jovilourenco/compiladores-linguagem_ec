@@ -35,9 +35,7 @@ class Parser:
         self.proximo_token()
         return tok
 
-    # -------------------------
     # prim -> número | '(' exp_a ')'
-    # -------------------------
     def analisaPrim(self) -> Exp:
         tok = self.get()
         if tok is None: # Se houve algum erro
@@ -67,9 +65,8 @@ class Parser:
             f"Erro na linha {tok.linha}, pos {tok.pos}: primária inválida, token {tok}"
         )
 
-    # -------------------------
+    
     # exp_m -> prim (('*'|'/') prim)*
-    # -------------------------
     def analisaExpM(self) -> Exp:
         # inicia com uma primária
         esq = self.analisaPrim()
@@ -89,9 +86,7 @@ class Parser:
 
         return esq
 
-    # -------------------------
     # exp_a -> exp_m (('+'|'-') exp_m)*
-    # -------------------------
     def analisaExpA(self) -> Exp:
         # inicia com um nível multiplicativo
         esq = self.analisaExpM()

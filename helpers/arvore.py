@@ -83,7 +83,7 @@ class OpBin(Exp):
 
 @dataclass
 class Decl:
-    """Declaração: nome = expr; (armazenamos linha/pos para mensagens de erro se necessário)"""
+    #Declaração: nome = expr; (armazenamos linha/pos para mensagens de erro se necessário)
     nome: str
     expr: Exp
     linha: Optional[int] = None
@@ -109,8 +109,8 @@ class Programa: # Programa é, de fato, a lista de declarações e o resultado (
 
     def avaliador(self) -> int:
         """
-        Avalia todo o programa:
-        - Processa declarações na ordem, atualiza ambiente (dict)
+        Esse avaliador avalia todo o programa:
+        - Processa declarações na ordem, verifica o ambiente (dict)
         - Avalia expressão final no ambiente resultante
         - Se houver uso de variável não declarada, Var.avaliador já lança NameError com linha/pos
         """
