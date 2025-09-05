@@ -12,12 +12,11 @@ Implementação em Python de um compilador para a linguagem **EV** (extensão de
 * Gramática da linguagem EV
 * Códigos refatorados com relação a EC
 * Como executar
-* Geração de assembly (montagem e execução)
+* Execução do assembly
 * Mensagens de erro (o que esperar)
-* Testes recomendados (conteúdo e resultado esperado)
-* Exemplo de assembly gerado (trecho)
-* Observações, limitações e extensões possíveis
-* Nomes de arquivo / placeholders
+* Testes recomendados
+* Exemplo de assembly gerado
+* Observações do compilador
 
 ---
 
@@ -97,7 +96,7 @@ Podemos executar as etapas isoladamente, só rodar o módulo ao invés do main.p
 
 ---
 
-## Geração de assembly — montagem e execução
+## Execução do assembly
 
 No diretório `assemblys`, com ajuda do WSL, visto que tenho Windows, executo:
 
@@ -134,7 +133,7 @@ ld -o saida saida.o
 
 ---
 
-## Testes recomendados (arquivos .txt)
+## Testes recomendados
 
 Coloquei alguns testes e o que eles retornam no arquivo `testes.txt`. Para testá-los, basta pegar o exemplo e colocar em `_teste.txt`. O main.py sempre utilizará ele para rodar.
 
