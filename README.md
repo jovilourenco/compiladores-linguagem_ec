@@ -10,8 +10,7 @@ Implementação em Python de um compilador para a linguagem **EV** (extensão de
 ## Sumário
 
 * Gramática da linguagem EV
-* Etapas implementadas
-* Estrutura de arquivos
+* Códigos refatorados com relação a EC
 * Como executar
 * Geração de assembly (montagem e execução)
 * Mensagens de erro (o que esperar)
@@ -24,7 +23,7 @@ Implementação em Python de um compilador para a linguagem **EV** (extensão de
 
 ## Gramática da linguagem EV
 
-A gramática utilizada (conforme enunciado da atividade) é:
+A gramática utilizada para EV foi:
 
 ```
 decl  ::= IDENT '=' exp ';'
@@ -43,15 +42,15 @@ prim   ::= num | ident | '(' exp_a ')'
 
 ---
 
-## Etapas implementadas
+## Refatorações com relação a EC
 
-1. **Tokenização / Lexer**
+1. **Tokenização / Analisador Léxico**
 
    * Tokens: `NUMERO`, `IDENT`, operadores (`+ - * /`), pontuação (`( ) = ;`) e `EOF`.
    * Regra especial: se uma sequência começar por dígito e depois contiver letras (`237axy`) → token `LEX_ERROR`.
    * Cada `Token` guarda `tipo`, `lexema`, `pos` e `linha`.
 
-2. **Parser (analisador sintático)**
+2. **Analisador Sintático**
 
    * Entrada: `parse_programa()` que implementa `decl* '=' exp EOF`.
    * Cada `decl` é `IDENT '=' exp ';'` (ponto-e-vírgula obrigatório — modo estrito).
@@ -63,54 +62,26 @@ prim   ::= num | ident | '(' exp_a ')'
    * Nós: `Const`, `Var`, `OpBin`, `Decl`, `Programa`.
    * `Programa.avaliador()` avalia declarações em ordem, mantendo `env` (tabela de símbolos); `Var.avaliador(env)` lança `NameError` se variável não estiver declarada.
 
-4. **Gerador de código (assembly x86-64 AT\&T)**
+4. **Gerador**
 
    * Reserva espaço para variáveis com `.lcomm <nome>, 8`.
    * Para cada `Decl`, gera código da expressão (resultado em `%rax`) e armazena em memória: `mov %rax, nome(%rip)`.
    * `Var` gera `mov nome(%rip), %rax`.
    * Mantém estratégia do professor (push/pop para operações binárias) e chama `imprime_num` e `sair` no final.
 
-5. **Ferramentas auxiliares**
+5. **Helpers**
 
    * Impressão de AST com `rich` (`helpers/arvore_print_rich.py`), adaptada para `Programa`, `Decl`, `Var`, `OpBin`, `Const`.
-   * `main.py` integra o fluxo: léxico → sintático → impressão → avaliação → geração.
-
----
-
-## Estrutura de arquivos (sugestão)
-
-```
-.
-├─ main.py                        # script que executa todas as etapas
-├─ analisadorLexicoEV.py          # lexer (substitua se o nome for diferente)
-├─ analisadorSintaticoEV.py       # parser (substitua se o nome for diferente)
-├─ gerador.py                     # gerador de assembly
-├─ runtime.s                      # runtime (imprime_num, sair)
-├─ assemblys/                     # saída do gerador (saida.s)
-└─ helpers/
-   ├─ token_tipos.py
-   ├─ token.py
-   ├─ arvore.py                   # classes AST (Const, Var, OpBin, Decl, Programa)
-   ├─ arvore_print_rich.py
-   └─ ... (outros helpers)
-```
-
-> Se algum nome for diferente no seu repositório, substitua nos comandos abaixo.
+   * `main.py` contém todo o fluxo: léxico → sintático → impressão → avaliação → geração. (Seria o compilador de fato)
 
 ---
 
 ## Como executar
 
-No diretório principal do projeto execute:
+No diretório principal do projeto executar:
 
 ```bash
-python main.py <programa.txt>
-```
-
-Exemplo:
-
-```bash
-python main.py test_valid_program.txt
+python main.py _teste.txt
 ```
 
 O `main.py` realiza, nesta ordem:
@@ -119,16 +90,16 @@ O `main.py` realiza, nesta ordem:
 2. Análise sintática (imprime AST)
 3. Impressão da expressão gerada (`ast.gerador()`)
 4. Avaliação/interpretador (`ast.avaliador()`) — mostra resultado final
-5. Impressão da árvore com `rich`
+5. Impressão da estrutura da árvore de sintaxe abstrata com `rich`
 6. Geração de assembly em `assemblys/saida.s`
 
-Se preferir executar somente etapas isoladas, rode os módulos correspondentes (por exemplo, o lexer ou o parser) conforme seus nomes de arquivo.
+Podemos executar as etapas isoladamente, só rodar o módulo ao invés do main.py (por exemplo, o analisadorLexicoEV.py ou o analisadorSintaticoEV.py). Usei muito para testes de unidade :D.
 
 ---
 
 ## Geração de assembly — montagem e execução
 
-No diretório `assemblys` execute:
+No diretório `assemblys`, com ajuda do WSL, visto que tenho Windows, executo:
 
 ```bash
 cd assemblys
@@ -165,85 +136,14 @@ ld -o saida saida.o
 
 ## Testes recomendados (arquivos .txt)
 
-Coloque cada bloco em um arquivo separado e rode `python main.py <arquivo>` para verificar o comportamento.
-
-1. `test_valid_program.txt` (válido)
-
-```
-x = (7 + 4) * 12;
-y = x * 3 + 11;
-= (x * y) + (x * 11) + (y * 13)
-```
-
-* Esperado: passa todas as fases; resultado `60467`; `assemblys/saida.s` gerado.
-
-2. `test_lex_error_numstart.txt` (erro léxico)
-
-```
-x = 237axy + 1;
-= x
-```
-
-* Esperado: lexer produz `LEX_ERROR` com lexema `237axy`.
-
-3. `test_missing_semicolon.txt` (erro sintático)
-
-```
-x = 7 + 4
-= x
-```
-
-* Esperado: `ParserError` por falta de `;`.
-
-4. `test_missing_final_equal.txt` (erro sintático)
-
-```
-x = 1;
-# sem linha iniciando por '=' para expression final
-```
-
-* Esperado: `ParserError` — falta `=` iniciando expressão final.
-
-5. `test_undeclared_variable.txt` (erro semântico)
-
-```
-x = 7 + y;
-= x
-```
-
-* Esperado: `NameError` informando `y` não declarada (linha/pos).
-
-6. `test_unbalanced_parentheses.txt` (erro sintático)
-
-```
-x = (7 + 4;
-= x
-```
-
-* Esperado: `ParserError` ao esperar `)`.
-
-7. `test_division_by_zero.txt` (erro de execução)
-
-```
-x = 7;
-y = x - 7;
-= x / y
-```
-
-* Esperado: `ZeroDivisionError`.
-
-8. `test_invalid_char_token.txt` (erro léxico)
-
-```
-x = 7 @ 3;
-= x
-```
-
-* Esperado: `LEX_ERROR` para `@`.
+Coloquei alguns testes e o que eles retornam no arquivo `testes.txt`. Para testá-los, basta pegar o exemplo e colocar em `_teste.txt`. O main.py sempre utilizará ele para rodar.
 
 ---
 
-## Exemplo de assembly gerado (trecho) — `test_valid_program.txt`
+## Exemplo de assembly gerado para o programa:
+x = (7 + 4) * 12;
+y = x * 3 + 11;
+= (x * y) + (x * 11) + (y * 13)
 
 ```asm
 .lcomm x, 8
@@ -285,31 +185,9 @@ _start:
 
 ---
 
-## Observações, limitações e extensões possíveis
+## Observações do compilador
 
-* **Ponto-e-vírgula obrigatório**: o parser exige `;` após cada declaração (comportamento estrito). Posso alterar para aceitar `EOF` como terminador final se preferir comportamento REPL-friendly.
-* **Fase de análise semântica separada**: hoje a verificação de variáveis e erros semânticos ocorre durante a avaliação (`Programa.avaliador()`). Posso adicionar uma função `verifica_semantica(programa)` que percorre a AST e relata todos os erros sem executar.
-* **Formato de armazenamento de variáveis**: uso `.lcomm` para reservar espaço; se quiser `.data` com inicializadores, posso adaptar.
-* **Mensagens de erro com trecho do código**: posso estender `ParserError` para mostrar a linha fonte com um caret apontando para a posição do token.
-
----
-
-## Nomes de arquivo / placeholders
-
-Substitua os nomes abaixo caso seus arquivos tenham nomes diferentes:
-
-* Lexer: `analisadorLexicoEV.py` → `_____`
-* Parser: `analisadorSintaticoEV.py` → `_____`
-* Gerador: `gerador.py` → `_____`
-* Runtime: `runtime.s` → `_____`
-* Saída assembly: `assemblys/saida.s` → `_____`
-
----
-
-Se quiser, eu posso:
-
-* gravar este arquivo `.md` no repositório (já criado aqui como documento),
-* gerar automaticamente os arquivos de teste (`test_*.txt`) para você, ou
-* implementar a fase `verifica_semantica(programa)` separada.
+* **Ponto-e-vírgula obrigatório**: o parser exige `;` após cada declaração (comportamento estrito).
+* **Fase de análise semântica separada**: hoje a verificação de variáveis e erros semânticos ocorre durante a avaliação (`Programa.avaliador()`).
 
 Diz o que prefere em seguida.
