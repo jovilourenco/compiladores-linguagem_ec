@@ -1,6 +1,6 @@
 # João Victor Lourenço da Silva (20220005997)
 
-from helpers.token_tipos import Numero, Operadores, Pontuacao, Identificador, Error
+from helpers.token_tipos import Numero, Operadores, Pontuacao, Identificador, Error, PalavraReservada
 from helpers.token import Token
 
 class AnalizadorLexico:
@@ -20,6 +20,9 @@ class AnalizadorLexico:
             self.linha += 1
         self.i += 1
 
+    def verificaProxToken(self) -> str:
+        return self.texto[self.i + 1] if (self.i + 1) < self.n else '\0'
+
     def verificaNumero(self, inicio: int) -> Token: # Verificar se é um número mesmo
         lex = ''
         while self.get().isdigit():
@@ -37,6 +40,18 @@ class AnalizadorLexico:
         while self.get().isalnum():  # letra ou dígito (mas quando entra na função, já é letra).
             lex += self.get()
             self.proximo_token()
+        
+        # Agora, tem que verificar as palavras chave: if, else, while, return.
+        lower = lex.lower()
+        if lower == 'if':
+            return Token(PalavraReservada.IF, lex, inicio, self.linha)
+        if lower == 'else':
+            return Token(PalavraReservada.ELSE, lex, inicio, self.linha)
+        if lower == 'while':
+            return Token(PalavraReservada.WHILE, lex, inicio, self.linha)
+        if lower == 'return':
+            return Token(PalavraReservada.RETURN, lex, inicio, self.linha)
+
         return Token(Identificador.IDENT, lex, inicio, self.linha)
 
     def classificador(self) -> Token:
@@ -59,6 +74,12 @@ class AnalizadorLexico:
         if carac.isalpha():
             return self.verificaIdentificador(inicio)
 
+        # Verifica se é ==
+        if carac == '=' and self.verificaProxToken() == '=':
+            self.proximo_token()
+            self.proximo_token()
+            return Token(Operadores.IGUAL_IGUAL, '==', inicio, self.linha)
+
         self.proximo_token() # desloca o ponteiro
 
         # operadores
@@ -71,12 +92,23 @@ class AnalizadorLexico:
         if carac == '/':
             return Token(Operadores.DIVISAO, carac, inicio, self.linha)
 
+        # Verifica se é < ou >
+        if carac == '<':
+            return Token(Operadores.MENOR, carac, inicio, self.linha)
+        if carac == '>':
+            return Token(Operadores.MAIOR, carac, inicio, self.linha)
+
+        # pontuação
         # pontuação
         if carac == '(':
             return Token(Pontuacao.PAREN_ESQ, carac, inicio, self.linha)
         if carac == ')':
             return Token(Pontuacao.PAREN_DIR, carac, inicio, self.linha)
-        if carac == '=':
+        if carac == '{':
+            return Token(Pontuacao.CHAVE_ESQ, carac, inicio, self.linha)
+        if carac == '}':
+            return Token(Pontuacao.CHAVE_DIR, carac, inicio, self.linha)
+        if carac == '=':  # operador de atribuição / início do resultado
             return Token(Pontuacao.IGUAL, carac, inicio, self.linha)
         if carac == ';':
             return Token(Pontuacao.PONTO_VIRGULA, carac, inicio, self.linha)

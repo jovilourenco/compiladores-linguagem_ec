@@ -1,10 +1,8 @@
-# João Victor Lourenço da Silva (20220005997)
-
-from typing import List
+from typing import List, Optional
 
 from helpers.token import Token
-from helpers.token_tipos import Numero, Identificador, Operadores, Pontuacao, Error
-from helpers.arvore import Exp, Const, OpBin, Var, Decl, Programa
+from helpers.token_tipos import Numero, Identificador, Operadores, Pontuacao, Error, PalavraReservada
+from helpers.arvore import Exp, Const, OpBin, Var, Decl, Programa, Stmt, Assign, IfStmt, WhileStmt, BlockStmt
 
 class ParserError(Exception):
     pass
@@ -105,6 +103,99 @@ class Parser:
 
         return esq
     
+    # Como temos um novo "nível" de precedência (comparações) criei a função para os comparadores.
+    def analisaExpC(self) -> Exp:
+        esq = self.analisaExpA()
+        tok = self.get()
+        while tok is not None and tok.tipo in (Operadores.MENOR, Operadores.MAIOR, Operadores.IGUAL_IGUAL):
+            operador = tok.tipo
+            self.proximo_token()
+            dir = self.analisaExpA()
+            esq = OpBin(operador, esq, dir)
+            tok = self.get()
+        return esq
+    
+    # Comandos até '}' sem consumir }
+    def parse_block(self) -> List['Stmt']:
+        stmts: List[Stmt] = []
+        while True:
+            tok = self.get()
+            if tok is None:
+                raise ParserError("Fim inesperado dentro de bloco, esperado '}'")
+            if tok.tipo == Pontuacao.CHAVE_DIR:
+                break
+            stmts.append(self.analisaComando())
+        return stmts
+    
+    #Comandos até o 'return' sem consumir o return
+    def parse_commands_until_return(self) -> List['Stmt']:
+        stmts: List[Stmt] = []
+        while True:
+            tok = self.get()
+            if tok is None:
+                raise ParserError("Fim inesperado dentro do bloco principal: esperado 'return'")
+            if tok.tipo == PalavraReservada.RETURN:
+                break
+            stmts.append(self.analisaComando())
+        return stmts
+    
+    # Função que verifica os comandos e suas respectivas estruturas.
+    def analisaComando(self) -> 'Stmt':
+        tok = self.get()
+        if tok is None:
+            raise ParserError("Fim inesperado ao analisar comando")
+
+        # if
+        if tok.tipo == PalavraReservada.IF:
+            self.proximo_token()
+            self.verificaProxToken(Pontuacao.PAREN_ESQ)
+            cond = self.analisaExpC()
+            self.verificaProxToken(Pontuacao.PAREN_DIR)
+            self.verificaProxToken(Pontuacao.CHAVE_ESQ)
+            then_stmts = self.parse_block()
+            self.verificaProxToken(Pontuacao.CHAVE_DIR)
+            else_stmts = None
+            ntok = self.get()
+            if ntok is not None and ntok.tipo == PalavraReservada.ELSE:
+                self.proximo_token()
+                self.verificaProxToken(Pontuacao.CHAVE_ESQ)
+                else_stmts = self.parse_block()
+                self.verificaProxToken(Pontuacao.CHAVE_DIR)
+            return IfStmt(cond, then_stmts, else_stmts)
+
+        # while
+        if tok.tipo == PalavraReservada.WHILE:
+            self.proximo_token()
+            self.verificaProxToken(Pontuacao.PAREN_ESQ)
+            cond = self.analisaExpC()
+            self.verificaProxToken(Pontuacao.PAREN_DIR)
+            self.verificaProxToken(Pontuacao.CHAVE_ESQ)
+            body = self.parse_block()
+            self.verificaProxToken(Pontuacao.CHAVE_DIR)
+            return WhileStmt(cond, body)
+
+        # bloco composto (um bloco isolado também é um comando válido)
+        if tok.tipo == Pontuacao.CHAVE_ESQ:
+            # consumir '{', ler blocos internos com parse_block, consumir '}'
+            self.proximo_token()  # consome '{'
+            inner_stmts = self.parse_block()
+            self.verificaProxToken(Pontuacao.CHAVE_DIR)
+            return BlockStmt(inner_stmts)
+
+        # atribuição (inicia com identificador)
+        if tok.tipo == Identificador.IDENT:
+            nome = tok.lexema
+            linha = tok.linha
+            pos = tok.pos
+            self.proximo_token()
+            self.verificaProxToken(Pontuacao.IGUAL)
+            expr = self.analisaExpC()
+            self.verificaProxToken(Pontuacao.PONTO_VIRGULA)
+            return Assign(nome, expr, linha=linha, pos=pos)
+
+        # caso inválido
+        raise ParserError(f"Erro na linha {tok.linha}, pos {tok.pos}: comando inválido, token {tok}")
+
     # Novo parser para a linguagem EV
     def parse_programa(self) -> Programa:
         declaracoes = [] # Declarações é o array de Decl(nome,expr,linha,pos) das declarações.
@@ -119,25 +210,34 @@ class Parser:
             self.proximo_token()
             # consumir '='
             self.verificaProxToken(Pontuacao.IGUAL)
-            # analisar expressão do lado direito
-            expr = self.analisaExpA()
+            # analisar os comandos, primeiro, agora.
+            expr = self.analisaExpC()
             # exigir ';' no final da declaração
             self.verificaProxToken(Pontuacao.PONTO_VIRGULA)
             declaracoes.append(Decl(nome, expr, linha=linha_ident, pos=pos_ident))
             tok = self.get()
 
-        # agora esperamos a expressão final que começa com '='
+        # agora esperamos a chave { para iniciar o main
         tok = self.get()
-        if tok is None or tok.tipo != Pontuacao.IGUAL:
+        if tok is None or tok.tipo != Pontuacao.CHAVE_ESQ:
             pos = tok.pos if tok else self.pos
             linha = tok.linha if tok else '?'
-            raise ParserError(f"Erro na linha {linha}, pos {pos}: esperado '=' iniciando expressão final, encontrado {tok}")
-        # consumir '='
+            
+            raise ParserError(f"Erro na linha {linha}, pos {pos}: esperado '{{' iniciando bloco principal, encontrado {tok}")
+        # consumir '{'
         self.proximo_token()
-        exp_final = self.analisaExpA()
-        # depois da expressão final deve vir EOF
+        
+        # ler comandos até 'return'
+        comandos = self.parse_commands_until_return()
+
+        # 'return' e expressão de retorno
+        self.verificaProxToken(PalavraReservada.RETURN)
+        resultado = self.analisaExpC()
+        self.verificaProxToken(Pontuacao.PONTO_VIRGULA)
+        self.verificaProxToken(Pontuacao.CHAVE_DIR)
         self.verificaProxToken(Pontuacao.EOF)
-        return Programa(declaracoes, exp_final)
+
+        return Programa(declaracoes, comandos, resultado)
 
     def parse(self) -> Programa:
         return self.parse_programa()

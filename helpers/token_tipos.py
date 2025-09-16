@@ -10,16 +10,27 @@ class Operadores(Enum):
     SUBTRACAO = auto()
     MULTIPLIC = auto()
     DIVISAO = auto()
+    MENOR = auto()
+    MAIOR = auto()
+    IGUAL_IGUAL = auto()
 
 class Pontuacao(Enum):
     PAREN_ESQ = auto()
     PAREN_DIR = auto()
     EOF = auto()
-    IGUAL = auto()            # '=' (atribuição e inicio do resultado)
-    PONTO_VIRGULA = auto()   # ';'
+    IGUAL = auto() 
+    PONTO_VIRGULA = auto()
+    CHAVE_ESQ = auto()
+    CHAVE_DIR = auto()     
 
 class Identificador(Enum):
     IDENT = auto()
+
+class PalavraReservada(Enum):
+    IF = auto()
+    ELSE = auto()
+    WHILE = auto()
+    RETURN = auto()
 
 class Error(Enum):
     LEX_ERROR = auto()

@@ -49,9 +49,22 @@ def main():
     print("\n--- Expressão gerada ---")
     print(ast.gerador())
 
+    # 3.5) Verificação semântica (antes de executar/avaliar)
+    try:
+        # chama o método de verificação estática que percorre declarações, comandos e retorno
+        ast.verifica_semantica()
+    except NameError as e:
+        print("Erro semântico:", e)
+        sys.exit(1)
+
     # 4) Interpretação (avaliação)
     print("\n--- Resultado da avaliação ---")
-    print(ast.avaliador())
+    try:
+        resultado = ast.avaliador()
+        print(resultado)
+    except Exception as e:
+        print("\nErro durante avaliação/semântica:", e)
+        sys.exit(1)
 
     # 5) Geração da AST
     rich_tree = build_rich_tree(ast)
