@@ -1,152 +1,131 @@
-# compiladores-linguagem\_ev
+# Teste
+
+# Compiladores - Linguagem CMD
 
 **Aluno:** João Victor Lourenço da Silva
 **Matrícula:** 20220005997
 
-Implementação em Python de um compilador para a linguagem **EV** (extensão de EC) — linguagem de expressões com declarações de variáveis — conforme atividade 08 da disciplina de Construção de Compiladores I.
+Este projeto é a implementação em Python de um compilador para a linguagem **CMD**, desenvolvida como parte da atividade 09 da disciplina de Construção de Compiladores I.
 
 ---
 
 ## Sumário
 
-* Gramática da linguagem EV
-* Códigos refatorados com relação a EC
-* Como executar
-* Execução do assembly
-* Mensagens de erro (o que esperar)
-* Testes recomendados
-* Exemplo de assembly gerado
-* Observações do compilador
+- Gramática da Linguagem CMD
+- Como Executar o Compilador
+- Execução do Assembly Gerado
+- Mensagens de Erro
+- Testes Recomendados
+- Exemplo de Assembly Gerado
 
 ---
 
-## Gramática da linguagem EV
+## Gramática da Linguagem CMD
 
-A gramática utilizada para EV foi:
+A gramática utilizada para a linguagem CMD é:
 
-```
-decl  ::= IDENT '=' exp ';'
-programa ::= decl* '=' exp EOF
-
-exp_a ::= exp_m (( '+' | '-' ) exp_m)*
-exp_m ::= prim (( '*' | '/' ) prim)*
-prim   ::= num | ident | '(' exp_a ')'
-```
-
-* `IDENT` — identificador: letra seguida de letras/dígitos (`[A-Za-z][A-Za-z0-9]*`).
-* `num` — sequência de dígitos (`[0-9]+`).
-* `=` inicia a expressão final (resultado).
-* `;` termina cada declaração.
-* Precedência/associatividade: `*`/`/` têm precedência sobre `+`/`-`; todas left-associative.
-
----
-
-## Refatorações com relação a EC
-
-1. **Tokenização / Analisador Léxico**
-
-   * Tokens: `NUMERO`, `IDENT`, operadores (`+ - * /`), pontuação (`( ) = ;`) e `EOF`.
-   * Regra especial: se uma sequência começar por dígito e depois contiver letras (`237axy`) → token `LEX_ERROR`.
-   * Cada `Token` guarda `tipo`, `lexema`, `pos` e `linha`.
-
-2. **Analisador Sintático**
-
-   * Entrada: `parse_programa()` que implementa `decl* '=' exp EOF`.
-   * Cada `decl` é `IDENT '=' exp ';'` (ponto-e-vírgula obrigatório — modo estrito).
-   * `prim` aceita `num`, `ident` e parênteses.
-   * Em erros sintáticos é lançada a exceção `ParserError` com `linha` e `pos`.
-
-3. **Árvore (AST)**
-
-   * Nós: `Const`, `Var`, `OpBin`, `Decl`, `Programa`.
-   * `Programa.avaliador()` avalia declarações em ordem, mantendo `env` (tabela de símbolos); `Var.avaliador(env)` lança `NameError` se variável não estiver declarada.
-
-4. **Gerador**
-
-   * Reserva espaço para variáveis com `.lcomm <nome>, 8`.
-   * Para cada `Decl`, gera código da expressão (resultado em `%rax`) e armazena em memória: `mov %rax, nome(%rip)`.
-   * `Var` gera `mov nome(%rip), %rax`.
-   * Mantém estratégia do professor (push/pop para operações binárias) e chama `imprime_num` e `sair` no final.
-
-5. **Helpers**
-
-   * Impressão de AST com `rich` (`helpers/arvore_print_rich.py`), adaptada para `Programa`, `Decl`, `Var`, `OpBin`, `Const`.
-   * `main.py` contém todo o fluxo: léxico → sintático → impressão → avaliação → geração. (Seria o compilador de fato)
-
----
-
-## Como executar
-
-No diretório principal do projeto executar:
-
-```bash
-python main.py _teste.txt
+```python
+programa ::= decl* '{' comando* 'return' exp ';' '}'
+decl ::= IDENT '=' exp ';'
+comando ::= atib | if | while
+atrib ::= IDENT '=' exp ';'
+if ::= 'if' exp '{' comando* '}' ( 'else' '{' comando* '}' )?
+while ::= 'while' exp '{' comando* '}'
+exp ::= exp_a ( ('<' | '>' | '==') exp_a )*
+exp_a ::= exp_m (('+'|'-') exp_m)*
+exp_m ::= prim (('*'|'/') prim)
+prim ::= num | ident | '(' exp_c ')'
 ```
 
-O `main.py` realiza, nesta ordem:
+---
 
-1. Análise léxica (imprime tokens)
-2. Análise sintática (imprime AST)
-3. Impressão da expressão gerada (`ast.gerador()`)
-4. Avaliação/interpretador (`ast.avaliador()`) — mostra resultado final
-5. Impressão da estrutura da árvore de sintaxe abstrata com `rich`
-6. Geração de assembly em `assemblys/saida.s`
+## Como Executar o Compilador
 
-Podemos executar as etapas isoladamente, só rodar o módulo ao invés do main.py (por exemplo, o analisadorLexicoEV.py ou o analisadorSintaticoEV.py). Usei muito para testes de unidade :D.
+No diretório principal do projeto, execute o comando a seguir, substituindo o conteúdo de `_teste.txt` pelo programa que você deseja testar (em teste.txt existem alguns de exemplo):
+
+Bash
+
+`python main.py _teste.txt`
+
+O `main.py` executa as seguintes etapas, nesta ordem:
+
+1. **Análise Léxica**: Imprime os tokens encontrados.
+2. **Análise Sintática**: Imprime a Árvore de Sintaxe Abstrata (AST).
+3. **Geração e Avaliação**: Imprime a expressão gerada (`ast.gerador()`) e o resultado da avaliação/interpretação (`ast.avaliador()`).
+4. **Visualização da AST**: Imprime a árvore de sintaxe abstrata em formato "rich".
+5. **Geração de Assembly**: Cria o arquivo `saida.s` no diretório `assemblys`.
+
+Também é possível executar cada módulo individualmente (por exemplo, `analisadorLexico.py` ou `analisadorSemantico.py`) para testes unitários.
 
 ---
 
-## Execução do assembly
+## Execução do Assembly Gerado
 
-No diretório `assemblys`, com ajuda do WSL, visto que tenho Windows, executo:
+O código assembly gerado utiliza a sintaxe AT&T (x86-64). 
 
-```bash
-cd assemblys
-as --64 -o saida.o saida.s
+No diretório `assemblys`, execute os seguintes comandos:
+
+Bash
+
+`as --64 -o saida.o saida.s
 ld -o saida saida.o
-./saida
-```
+./saida`
 
-* Sintaxe: AT\&T (x86-64).
-* O `runtime.s` deve prover `imprime_num` e `sair` (incluso pelo `footer()` do gerador).
+**Observação**: O arquivo `runtime.s` é incluído automaticamente pelo gerador do compilador e fornece as funções `imprime_num` e `sair`, necessárias para a execução do programa.
 
 ---
 
-## Mensagens de erro (o que esperar)
+## Mensagens de Erro
 
-### Erros léxicos
+Aqui estão alguns tipos de erro que você pode encontrar:
 
-* **Token inválido** (caractere não reconhecido): token `Error.LEX_ERROR` com lexema do fragmento (`@`, `#`, etc.).
-* **Número seguido de letras** (ex.: `237axy`): token `LEX_ERROR` com lexema completo.
+### Erros Léxicos
 
-### Erros sintáticos
+- **Token inválido**: Caractere não reconhecido, resultando em um erro do tipo `LEX_ERROR`.
+- **Número seguido de letras**: Exemplo: `237axy`, também gera um erro `LEX_ERROR`.
 
-* Falta de `;` numa declaração → `ParserError` com `linha` e `pos` indicando onde esperava `;`.
-* Falta de `=` iniciando expressão final → `ParserError` com indicação do local.
-* Parênteses não balanceados ou token inesperado → `ParserError` com linha/pos.
+### Erros Sintáticos
 
-### Erros semânticos / de execução
+- **Falta de `;`**: Em declarações ou atribuições.
+- **Blocos incompletos**: Ausência de `{` ou `}` em blocos de código.
+- **`return` fora de lugar**: O comando `return` só pode ser usado no final do programa principal.
+- **Tokens inesperados**: Gera um `ParserError` com a linha e posição do erro.
 
-* Uso de variável não declarada → `NameError` com mensagem:
-  `Erro semântico: variável '<nome>' não declarada (linha <l>, pos <p>)`.
-* Divisão por zero → `ZeroDivisionError: Divisão por zero`.
+### Erros Semânticos / De Execução
 
----
-
-## Testes recomendados
-
-Coloquei alguns testes e o que eles retornam no arquivo `testes.txt`. Para testá-los, basta pegar o exemplo e colocar em `_teste.txt`. O main.py sempre utilizará ele para rodar.
+- **Variável não declarada**: O uso de uma variável que não foi previamente declarada causa um `NameError`.
+- **Atribuição para variável não declarada**.
+- **Divisão por zero**: Gera um `ZeroDivisionError`.
 
 ---
 
-## Exemplo de assembly gerado para o programa:
+## Testes Recomendados
+
+O arquivo `testes.txt` contém uma variedade de exemplos de código, tanto válidos quanto com erros. Para testar o compilador, basta copiar o exemplo desejado para o arquivo `_teste.txt` e executar o `main.py`.
+
+---
+
+## Exemplo de Assembly Gerado
+
+A seguir, um exemplo de código CMD e o respectivo assembly gerado.
+
+**Código CMD:**
+
+```python
 x = (7 + 4) * 12;
 y = x * 3 + 11;
-= (x * y) + (x * 11) + (y * 13)
+{
+  return (x * y) + (x * 11) + (y * 13);
+}
+```
 
-```asm
-.lcomm x, 8
-.lcomm y, 8
+**Assembly Gerado (`assemblys/saida.s`):**
+
+Snippet de código
+
+```python
+  .lcomm x, 8
+  .lcomm y, 8
 
   .section .text
   .globl _start
@@ -161,9 +140,9 @@ _start:
     mov $12, %rax
     pop %rbx
     mul %rbx
-    mov %rax, x(%rip)
+    mov %rax, x
 
-    mov x(%rip), %rax
+    mov x, %rax
     push %rax
     mov $3, %rax
     pop %rbx
@@ -172,7 +151,7 @@ _start:
     mov $11, %rax
     pop %rbx
     add %rbx, %rax
-    mov %rax, y(%rip)
+    mov %rax, y
 
     ; ... código da expressão final ...
 
@@ -181,12 +160,3 @@ _start:
 
     .include "runtime.s"
 ```
-
----
-
-## Observações do compilador
-
-* **Ponto-e-vírgula obrigatório**: o parser exige `;` após cada declaração (comportamento estrito).
-* **Fase de análise semântica separada**: hoje a verificação de variáveis e erros semânticos ocorre durante a avaliação (`Programa.avaliador()`).
-
-Diz o que prefere em seguida.

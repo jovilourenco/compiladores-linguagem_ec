@@ -158,7 +158,7 @@ class WhileStmt(Stmt):
             for s in self.body:
                 s.avaliador(env)
         return None
-    
+
 @dataclass
 class BlockStmt(Stmt):
     """Bloco composto: lista de statements executados em sequência."""
@@ -172,6 +172,27 @@ class BlockStmt(Stmt):
         for s in self.stmts:
             s.avaliador(env)
         return None
+
+class ReturnException(Exception):
+    """Exceção usada internamente no avaliador para retornar imediatamente de um bloco."""
+    def __init__(self, value: int):
+        super().__init__("Return")
+        self.value = value
+
+@dataclass
+class ReturnStmt(Stmt):
+    expr: Exp
+    linha: Optional[int] = None
+    pos: Optional[int] = None
+
+    def __repr__(self) -> str:
+        return f"Return({self.expr})"
+
+    def avaliador(self, env: Dict[str, int]) -> None:
+        # avalia expressão e lança ReturnException para interromper execução e retornar o valor
+        val = self.expr.avaliador(env)
+        raise ReturnException(val)
+
 
 @dataclass
 class Programa: # Programa é, de fato, a lista de declarações e o resultado (expressão a ser processada)
@@ -231,7 +252,10 @@ class Programa: # Programa é, de fato, a lista de declarações e o resultado (
                 check_expr(s.cond)
                 for ss in s.body:
                     check_stmt(ss)
-            elif hasattr(s, 'stmts'):  # BlockStmt (composto)
+            elif isinstance(s, ReturnStmt):
+                # checar expressão do return
+                check_expr(s.expr)
+            elif isinstance(s, BlockStmt):
                 for ss in s.stmts:
                     check_stmt(ss)
             else:
@@ -259,11 +283,17 @@ class Programa: # Programa é, de fato, a lista de declarações e o resultado (
 
     def avaliador(self) -> int:
         env: Dict[str, int] = {}
+        # executa declarações (preenche env)
         for d in self.declaracoes:
             val = d.expr.avaliador(env)
             env[d.nome] = val
-        for c in self.comandos:
-            c.avaliador(env)
+        # executa comandos; se houver ReturnException, retorna seu valor
+        try:
+            for c in self.comandos:
+                c.avaliador(env)
+        except ReturnException as re:
+            return re.value
+        # se nenhum return precoce, avalia resultado final
         return self.resultado.avaliador(env)
 
     def __repr__(self) -> str:

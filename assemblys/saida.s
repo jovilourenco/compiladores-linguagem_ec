@@ -1,53 +1,54 @@
   .section .bss
-  .lcomm x, 8
-  .lcomm y, 8
+  .lcomm a, 8
+  .lcomm b, 8
 
 
   .section .text
   .globl _start
 
 _start:
-    mov $7, %rax
+    mov $5, %rax
+    mov %rax, a
+    mov $5, %rax
+    mov %rax, b
+    mov b, %rax
     push %rax
-    mov $4, %rax
+    mov a, %rax
     pop %rbx
-    add %rbx, %rax
+    xor %rcx, %rcx
+    cmp %rbx, %rax
+    setl %cl
+    mov %rcx, %rax
+    cmp $0, %rax
+    jz Lfalso1
+    mov $1, %rax
+    jmp Lexit0
+    jmp Lfim2
+
+Lfalso1:
+    mov b, %rax
     push %rax
-    mov $12, %rax
+    mov a, %rax
     pop %rbx
-    mul %rbx
-    mov %rax, x
-    mov x, %rax
-    push %rax
+    xor %rcx, %rcx
+    cmp %rbx, %rax
+    setz %cl
+    mov %rcx, %rax
+    cmp $0, %rax
+    jz Lfalso3
+    mov $2, %rax
+    jmp Lexit0
+    jmp Lfim4
+
+Lfalso3:
     mov $3, %rax
-    pop %rbx
-    mul %rbx
-    push %rax
-    mov $11, %rax
-    pop %rbx
-    add %rbx, %rax
-    mov %rax, y
-    mov x, %rax
-    push %rax
-    mov y, %rax
-    pop %rbx
-    mul %rbx
-    push %rax
-    mov x, %rax
-    push %rax
-    mov $11, %rax
-    pop %rbx
-    mul %rbx
-    pop %rbx
-    add %rbx, %rax
-    push %rax
-    mov y, %rax
-    push %rax
-    mov $13, %rax
-    pop %rbx
-    mul %rbx
-    pop %rbx
-    add %rbx, %rax
+    jmp Lexit0
+
+Lfim4:
+
+Lfim2:
+    mov $0, %rax
+Lexit0:
 
     call imprime_num
     call sair

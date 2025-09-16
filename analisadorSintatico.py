@@ -1,8 +1,10 @@
+# João Victor Lourenço da Silva (20220005997)
+
 from typing import List, Optional
 
 from helpers.token import Token
 from helpers.token_tipos import Numero, Identificador, Operadores, Pontuacao, Error, PalavraReservada
-from helpers.arvore import Exp, Const, OpBin, Var, Decl, Programa, Stmt, Assign, IfStmt, WhileStmt, BlockStmt
+from helpers.arvore import Exp, Const, OpBin, Var, Decl, Programa, Stmt, Assign, IfStmt, WhileStmt, BlockStmt, ReturnStmt
 
 class ParserError(Exception):
     pass
@@ -133,8 +135,12 @@ class Parser:
         while True:
             tok = self.get()
             if tok is None:
-                raise ParserError("Fim inesperado dentro do bloco principal: esperado 'return'")
+                raise ParserError("Fim inesperado dentro do bloco principal: esperado 'return' ou '}'")
+            # se encontramos 'return' no nível superior, interrompemos (não consumimos aqui)
             if tok.tipo == PalavraReservada.RETURN:
+                break
+            # se encontramos '}' significa fim do bloco principal sem return no nível superior -> interrompe
+            if tok.tipo == Pontuacao.CHAVE_DIR:
                 break
             stmts.append(self.analisaComando())
         return stmts
@@ -192,6 +198,13 @@ class Parser:
             expr = self.analisaExpC()
             self.verificaProxToken(Pontuacao.PONTO_VIRGULA)
             return Assign(nome, expr, linha=linha, pos=pos)
+        
+        if tok.tipo == PalavraReservada.RETURN:
+            # consumir 'return'
+            self.proximo_token()
+            expr = self.analisaExpC()
+            self.verificaProxToken(Pontuacao.PONTO_VIRGULA)
+            return ReturnStmt(expr, linha=tok.linha, pos=tok.pos)
 
         # caso inválido
         raise ParserError(f"Erro na linha {tok.linha}, pos {tok.pos}: comando inválido, token {tok}")
@@ -230,14 +243,29 @@ class Parser:
         # ler comandos até 'return'
         comandos = self.parse_commands_until_return()
 
-        # 'return' e expressão de retorno
-        self.verificaProxToken(PalavraReservada.RETURN)
-        resultado = self.analisaExpC()
-        self.verificaProxToken(Pontuacao.PONTO_VIRGULA)
-        self.verificaProxToken(Pontuacao.CHAVE_DIR)
-        self.verificaProxToken(Pontuacao.EOF)
-
-        return Programa(declaracoes, comandos, resultado)
+        # agora verificar o que vem a seguir: se for 'return' processamos o retorno (caso clássico),
+        # se for '}' então o bloco principal terminou sem um return no nível superior.
+        tok = self.get()
+        if tok is not None and tok.tipo == PalavraReservada.RETURN:
+            # 'return' e expressão de retorno (caso clássico)
+            self.proximo_token()  # consome 'return'
+            resultado = self.analisaExpC()
+            self.verificaProxToken(Pontuacao.PONTO_VIRGULA)
+            # consumir '}' final do bloco principal
+            self.verificaProxToken(Pontuacao.CHAVE_DIR)
+            # deve vir EOF em seguida
+            self.verificaProxToken(Pontuacao.EOF)
+            return Programa(declaracoes, comandos, resultado)
+        elif tok is not None and tok.tipo == Pontuacao.CHAVE_DIR:
+            # caso sem 'return' no nível superior: consumimos '}' e EOF e usamos Const(0) como resultado padrão.
+            self.proximo_token()  # consome '}'
+            self.verificaProxToken(Pontuacao.EOF)
+            resultado = Const(0)
+            return Programa(declaracoes, comandos, resultado)
+        else:
+            pos = tok.pos if tok else self.pos
+            linha = tok.linha if tok else '?'
+            raise ParserError(f"Erro na linha {linha}, pos {pos}: esperado 'return' ou '}}' fechando bloco principal, encontrado {tok}")
 
     def parse(self) -> Programa:
         return self.parse_programa()
@@ -245,7 +273,7 @@ class Parser:
 
 if __name__ == '__main__':
     import sys
-    from analisadorLexicoEV import AnalizadorLexico # Primeiro faz a análise léxica
+    from analisadorLexico import AnalizadorLexico # Primeiro faz a análise léxica
 
     if len(sys.argv) != 2:
         print("Uso: python analisadorSintaticoEC.py <arquivo.txt>")

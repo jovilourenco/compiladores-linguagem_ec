@@ -1,9 +1,10 @@
 # João Victor Lourenço da Silva (20220005997)
+
 from rich import print
 from rich.tree import Tree
 from .arvore import (
     Exp, Const, OpBin, Var, Decl, Programa,
-    Stmt, Assign, IfStmt, WhileStmt, BlockStmt
+    Stmt, Assign, IfStmt, WhileStmt, BlockStmt, ReturnStmt
 )
 from helpers.token_tipos import Operadores
 
@@ -112,6 +113,12 @@ def build_rich_tree(node: Exp | Decl | Programa | Stmt, label: str = None) -> Tr
         t = Tree("Bloco")
         for s in node.stmts:
             t.add(build_rich_tree(s))
+        return t
+    
+    # Return
+    if isinstance(node, ReturnStmt):
+        t = Tree("Return")
+        t.add(build_rich_tree(node.expr))
         return t
 
     # Fallback — representar genericamente
