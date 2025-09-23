@@ -45,7 +45,7 @@ Apenas essa alteração.
 
 ## Como Executar o Compilador
 
-No diretório principal do projeto, execute o comando a seguir, substituindo o conteúdo de `_teste.txt` pelo programa que você deseja testar (em teste.txt existem alguns de exemplo):
+No diretório principal do projeto, primeiro, instale o rich `pip install rich` e, depois execute o comando a seguir, substituindo o conteúdo de `_teste.txt` pelo programa que você deseja testar (em teste.txt existem alguns de exemplo):
 
 Bash
 
