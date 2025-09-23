@@ -41,7 +41,7 @@ class AnalizadorLexico:
             lex += self.get()
             self.proximo_token()
         
-        # Agora, tem que verificar as palavras chave: if, else, while, return.
+        # Agora, tem que verificar as palavras chave: if, else, while, return, fun, var, main.
         lower = lex.lower()
         if lower == 'if':
             return Token(PalavraReservada.IF, lex, inicio, self.linha)
@@ -51,6 +51,12 @@ class AnalizadorLexico:
             return Token(PalavraReservada.WHILE, lex, inicio, self.linha)
         if lower == 'return':
             return Token(PalavraReservada.RETURN, lex, inicio, self.linha)
+        if lower == 'fun':
+            return Token(PalavraReservada.FUN, lex, inicio, self.linha)
+        if lower == 'var':
+            return Token(PalavraReservada.VAR, lex, inicio, self.linha)
+        if lower == 'main':
+            return Token(PalavraReservada.MAIN, lex, inicio, self.linha)
 
         return Token(Identificador.IDENT, lex, inicio, self.linha)
 
@@ -112,6 +118,8 @@ class AnalizadorLexico:
             return Token(Pontuacao.IGUAL, carac, inicio, self.linha)
         if carac == ';':
             return Token(Pontuacao.PONTO_VIRGULA, carac, inicio, self.linha)
+        if carac == ',':
+            return Token(Pontuacao.VIRGULA, carac, inicio, self.linha)
 
         # erro léxico
         return Token(Error.LEX_ERROR, carac, inicio, self.linha)

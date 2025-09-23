@@ -21,7 +21,8 @@ class Pontuacao(Enum):
     IGUAL = auto() 
     PONTO_VIRGULA = auto()
     CHAVE_ESQ = auto()
-    CHAVE_DIR = auto()     
+    CHAVE_DIR = auto()
+    VIRGULA = auto() 
 
 class Identificador(Enum):
     IDENT = auto()
@@ -31,6 +32,9 @@ class PalavraReservada(Enum):
     ELSE = auto()
     WHILE = auto()
     RETURN = auto()
+    FUN = auto()
+    VAR = auto()
+    MAIN = auto()
 
 class Error(Enum):
     LEX_ERROR = auto()

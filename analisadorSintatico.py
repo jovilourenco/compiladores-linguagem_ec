@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from helpers.token import Token
 from helpers.token_tipos import Numero, Identificador, Operadores, Pontuacao, Error, PalavraReservada
-from helpers.arvore import Exp, Const, OpBin, Var, Decl, Programa, Stmt, Assign, IfStmt, WhileStmt, BlockStmt, ReturnStmt
+from helpers.arvore import Exp, Const, OpBin, Var, Decl, Programa, Stmt, Assign, IfStmt, WhileStmt, BlockStmt, ReturnStmt, FunDecl, Call
 
 class ParserError(Exception):
     pass
@@ -51,8 +51,27 @@ class Parser:
             nome = tok.lexema
             linha = tok.linha
             pos = tok.pos
-            self.proximo_token()
-            return Var(nome, linha=linha, pos=pos)
+
+            prox = self.tokens[self.pos + 1] if (self.pos + 1) < len(self.tokens) else None
+            if prox is not None and prox.tipo == Pontuacao.PAREN_ESQ:
+                self.proximo_token() #consome o identificador
+                self.verificaProxToken(Pontuacao.PAREN_ESQ) #consome o (
+                args = [] #argumentos
+                tok2 = self.get()
+                if tok2 is not None and tok2.tipo != Pontuacao.PAREN_DIR:
+                    #se entrou aqui é pq tem pelo menos 1 argumento
+                    args.append(self.analisaExpC())
+                    tok2 = self.get()
+                    while tok2 is not None and tok2.tipo == Pontuacao.VIRGULA:
+                        #Vai consumindo o restante dos argumentos e adicionando em args
+                        self.proximo_token()
+                        args.append(self.analisaExpC())
+                        tok2 = self.get()
+                self.verificaProxToken(Pontuacao.PAREN_DIR)
+                return Call(nome,args,linha=linha,pos=pos)
+            else:
+                self.proximo_token()
+                return Var(nome,linha=linha,pos=pos)
 
         if tok.tipo == Pontuacao.PAREN_ESQ:
             self.proximo_token()  # consome '('
@@ -209,63 +228,141 @@ class Parser:
         # caso inválido
         raise ParserError(f"Erro na linha {tok.linha}, pos {tok.pos}: comando inválido, token {tok}")
 
-    # Novo parser para a linguagem EV
-    def parse_programa(self) -> Programa:
-        declaracoes = [] # Declarações é o array de Decl(nome,expr,linha,pos) das declarações.
+    #vardecl ::= 'var' <ident> '=' <exp> ';'
+    def parse_var_decl(self) -> Decl:
         tok = self.get()
-        # ler declarações enquanto houver identificador
-        while tok is not None and tok.tipo == Identificador.IDENT:
-            nome_tok = tok
-            nome = nome_tok.lexema
-            linha_ident = nome_tok.linha
-            pos_ident = nome_tok.pos
-            # consumir identificador
-            self.proximo_token()
-            # consumir '='
-            self.verificaProxToken(Pontuacao.IGUAL)
-            # analisar os comandos, primeiro, agora.
-            expr = self.analisaExpC()
-            # exigir ';' no final da declaração
-            self.verificaProxToken(Pontuacao.PONTO_VIRGULA)
-            declaracoes.append(Decl(nome, expr, linha=linha_ident, pos=pos_ident))
-            tok = self.get()
-
-        # agora esperamos a chave { para iniciar o main
-        tok = self.get()
-        if tok is None or tok.tipo != Pontuacao.CHAVE_ESQ:
+        if tok is None or tok.tipo != PalavraReservada.VAR:
             pos = tok.pos if tok else self.pos
             linha = tok.linha if tok else '?'
-            
-            raise ParserError(f"Erro na linha {linha}, pos {pos}: esperado '{{' iniciando bloco principal, encontrado {tok}")
-        # consumir '{'
+            raise ParserError(f"Erro na linha {linha}, pos {pos}: esperado 'var' iniciando declaração de variável, encontrado {tok}")
+        #Consumir o 'var'
         self.proximo_token()
-        
-        # ler comandos até 'return'
+        nome_tok = self.verificaProxToken(Identificador.IDENT)
+        nome = nome_tok.lexema
+        linha_ident = nome_tok.linha
+        pos_ident = nome_tok.pos
+        #Consumir a atribuição '='
+        self.verificaProxToken(Pontuacao.IGUAL)
+        expr = self.analisaExpC()
+        self.verificaProxToken(Pontuacao.PONTO_VIRGULA)
+        return Decl(nome,expr,linha=linha_ident,pos=pos_ident)
+
+    # fundecl ::= 'fun' <ident> '(' <args>? ')' '{' <vardecl>* <cmd>* 'return' <exp> ';' '}'
+    def parse_fun_decl(self) -> FunDecl:
+        tok = self.get()
+        if tok is None or tok.tipo != PalavraReservada.FUN:
+            pos = tok.pos if tok else self.pos
+            linha = tok.linha if tok else '?'
+            raise ParserError(f"Erro na linha {linha}, pos {pos}: esperado 'fun' iniciando declaração de função, encontrado {tok}")
+        self.proximo_token() # Consumir o fun
+        nome_tok = self.verificaProxToken(Identificador.IDENT)
+        nome = nome_tok.lexema
+        linha_ident = nome_tok.linha
+        pos_ident = nome_tok.pos
+        # Parametros formais
+        self.verificaProxToken(Pontuacao.PAREN_ESQ)
+        params: List[str] = []
+        tok2 = self.get()
+        if tok2 is not None and tok2.tipo != Pontuacao.PAREN_DIR:
+            # pelo menos um parâmetro
+            p_tok = self.verificaProxToken(Identificador.IDENT)
+            params.append(p_tok.lexema)
+            tok2 = self.get()
+            while tok2 is not None and tok2.tipo == Pontuacao.VIRGULA:
+                self.proximo_token()  # consome ','
+                p_tok = self.verificaProxToken(Identificador.IDENT)
+                params.append(p_tok.lexema)
+                tok2 = self.get()
+        self.verificaProxToken(Pontuacao.PAREN_DIR)
+
+        # corpo da função
+        self.verificaProxToken(Pontuacao.CHAVE_ESQ)
+        # primeiro parse de declarações locais 'var'*
+        local_decls: List[Decl] = []
+        while True:
+            ntok = self.get()
+            if ntok is None:
+                raise ParserError("Fim inesperado dentro de função, esperado '}'")
+            if ntok.tipo == PalavraReservada.VAR:
+                d = self.parse_var_decl()
+                local_decls.append(d)
+                continue
+            break
+
+        # comandos até return
         comandos = self.parse_commands_until_return()
 
-        # agora verificar o que vem a seguir: se for 'return' processamos o retorno (caso clássico),
-        # se for '}' então o bloco principal terminou sem um return no nível superior.
+        # agora 'return' obrigatório dentro da função
+        self.verificaProxToken(PalavraReservada.RETURN)
+        resultado = self.analisaExpC()
+        self.verificaProxToken(Pontuacao.PONTO_VIRGULA)
+        # fechar '}'
+        self.verificaProxToken(Pontuacao.CHAVE_DIR)
+
+        return FunDecl(nome, params, local_decls, comandos, resultado, linha=linha_ident, pos=pos_ident)
+
+    # Novo parser para a linguagem EV
+    def parse_programa(self) -> Programa:
+        var_decls: List[Decl] = []
+        fun_decls: List[FunDecl] = []
+
+        tok = self.get()
+        # ler declarações (var / fun) em qualquer ordem
+        while tok is not None and (tok.tipo == PalavraReservada.VAR or tok.tipo == PalavraReservada.FUN):
+            if tok.tipo == PalavraReservada.VAR:
+                d = self.parse_var_decl()
+                var_decls.append(d)
+            else:
+                # FUN
+                f = self.parse_fun_decl()
+                fun_decls.append(f)
+            tok = self.get()
+
+        # agora esperamos 'main'
+        tok = self.get()
+        if tok is None or tok.tipo != PalavraReservada.MAIN:
+            pos = tok.pos if tok else self.pos
+            linha = tok.linha if tok else '?'
+            raise ParserError(f"Erro na linha {linha}, pos {pos}: esperado 'main' iniciando bloco principal, encontrado {tok}")
+        # consome 'main'
+        self.proximo_token()
+        self.verificaProxToken(Pontuacao.CHAVE_ESQ)
+
+        # Observação: main NÃO pode conter declarações 'var' locais -> se houver, erro de sintaxe.
+        # Ler comandos até return ou '}' (mesmo comportamento anterior)
+        comandos = []
+        while True:
+            ntok = self.get()
+            if ntok is None:
+                raise ParserError("Fim inesperado dentro do main: esperado 'return' ou '}'")
+            if ntok.tipo == PalavraReservada.RETURN:
+                break
+            if ntok.tipo == Pontuacao.CHAVE_DIR:
+                break
+            # detecta 'var' dentro de main -> erro (religioso a sua restrição)
+            if ntok.tipo == PalavraReservada.VAR:
+                raise ParserError(f"Erro na linha {ntok.linha}, pos {ntok.pos}: declaração 'var' não permitida dentro de main")
+            comandos.append(self.analisaComando())
+
+        # se houver 'return' processa retorno, senão considera resultado Const(0)
         tok = self.get()
         if tok is not None and tok.tipo == PalavraReservada.RETURN:
-            # 'return' e expressão de retorno (caso clássico)
-            self.proximo_token()  # consome 'return'
+            self.proximo_token()
             resultado = self.analisaExpC()
             self.verificaProxToken(Pontuacao.PONTO_VIRGULA)
-            # consumir '}' final do bloco principal
             self.verificaProxToken(Pontuacao.CHAVE_DIR)
-            # deve vir EOF em seguida
             self.verificaProxToken(Pontuacao.EOF)
-            return Programa(declaracoes, comandos, resultado)
+            return Programa(var_decls, fun_decls, comandos, resultado)
         elif tok is not None and tok.tipo == Pontuacao.CHAVE_DIR:
-            # caso sem 'return' no nível superior: consumimos '}' e EOF e usamos Const(0) como resultado padrão.
-            self.proximo_token()  # consome '}'
+            # main sem return - fecha e EOF
+            self.proximo_token()
             self.verificaProxToken(Pontuacao.EOF)
             resultado = Const(0)
-            return Programa(declaracoes, comandos, resultado)
+            return Programa(var_decls, fun_decls, comandos, resultado)
         else:
             pos = tok.pos if tok else self.pos
             linha = tok.linha if tok else '?'
-            raise ParserError(f"Erro na linha {linha}, pos {pos}: esperado 'return' ou '}}' fechando bloco principal, encontrado {tok}")
+            raise ParserError(f"Erro na linha {linha}, pos {pos}: esperado 'return' ou '}}' fechando main, encontrado {tok}")
 
     def parse(self) -> Programa:
         return self.parse_programa()
@@ -276,13 +373,13 @@ if __name__ == '__main__':
     from analisadorLexico import AnalizadorLexico # Primeiro faz a análise léxica
 
     if len(sys.argv) != 2:
-        print("Uso: python analisadorSintaticoEC.py <arquivo.txt>")
+        print("Uso: python analisadorSintatico.py <arquivo.txt>")
         sys.exit(1)
 
     # Análise Léxica
     with open(sys.argv[1], 'r') as f:
         texto = f.read()
-    
+
     lexer = AnalizadorLexico(texto)
     tokens = lexer.tokenizador()
 
@@ -299,8 +396,12 @@ if __name__ == '__main__':
 
     # impressão da expressão a partir da árvore 
     expr_str = ast.gerador()
-    print("\nExpressão parseada: \n", expr_str)
+    print("\nPrograma gerado: \n", expr_str)
 
     # Interpretação (resultado da expressão)
-    resultado = ast.avaliador()
+    try:
+        resultado = ast.avaliador()
+    except Exception as e:
+        print("Erro em tempo de execução/semântico:", e)
+        sys.exit(1)
     print("\nResultado da avaliação:", resultado)
