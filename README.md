@@ -37,7 +37,7 @@ exp_m ::= prim (('*'|'/') prim)
 prim ::= num | ident | '(' exp_c ')'
 ```
 
-Algo que observo: Na implementação dessa gramática, criei uma pequena variação. Após um comando como `if` ou `while`, o programa espera um '('. o formato do comando é algo do tipo: <comando> (<expressão>) {<comando>}
+Algo que observo: Na implementação dessa gramática, criei uma pequena variação. Após um comando como `if` ou `while`, o programa espera um '('. o formato dos comandos é algo do tipo: `comando (expressão) '{'comando'}'`
 
 Apenas essa alteração.
 
