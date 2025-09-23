@@ -37,6 +37,10 @@ exp_m ::= prim (('*'|'/') prim)
 prim ::= num | ident | '(' exp_c ')'
 ```
 
+Algo que observo: Na implementação dessa gramática, criei uma pequena variação. Após um comando como `if` ou `while`, o programa espera um '('. o formato do comando é algo do tipo: <comando> (<expressão>) {<comando>}
+
+Apenas essa alteração.
+
 ---
 
 ## Como Executar o Compilador
@@ -67,9 +71,11 @@ No diretório `assemblys`, execute os seguintes comandos:
 
 Bash
 
-`as --64 -o saida.o saida.s
+```cd assemblys
+as --64 -o saida.o saida.s
 ld -o saida saida.o
-./saida`
+./saida
+```
 
 **Observação**: O arquivo `runtime.s` é incluído automaticamente pelo gerador do compilador e fornece as funções `imprime_num` e `sair`, necessárias para a execução do programa.
 
