@@ -1,13 +1,15 @@
 # João Victor Lourenço da Silva (20220005997)
 
-from helpers.arvore import Const, OpBin, Var, Decl, Programa, Assign, IfStmt, WhileStmt, BlockStmt, ReturnStmt
+from helpers.arvore import (
+    Const, OpBin, Var, Decl, Programa,
+    Assign, IfStmt, WhileStmt, BlockStmt, ReturnStmt, FunDecl, Call
+)
 from helpers.token_tipos import Operadores
 
 # ===== Modelos fixos assembly =====
 
 def header():
     return f"""
-  .section .text
   .globl _start
 
 _start:
@@ -17,7 +19,7 @@ def footer():
     return f"""
     call imprime_num
     call sair
-    
+
     .include "runtime.s"
 """
 
@@ -32,15 +34,14 @@ def vars_section(var_names: list[str]) -> str:
     return s + "\n"
 
 
-# ===== Gerador =====
+# ===== Gerador helpers (expressões básicas) =====
 
 def gen_const(lit: int) -> str:
-    # Geração de código de uma constante
+    # Geração de código de uma constante (deixa valor em %rax)
     return f"    mov ${lit}, %rax\n"
 
-
 def opBin_soma(opE_codigo: str, opD_codigo: str) -> str:
-    # Gera código do operador ESQUERDO e dps DIREITO:
+    # avaliar esquerda, push; avaliar direita; pop left em %rbx; rax = right + left
     return (
         opE_codigo +
         "    push %rax\n" +
@@ -50,40 +51,41 @@ def opBin_soma(opE_codigo: str, opD_codigo: str) -> str:
     )
 
 def opBin_sub(opE_codigo: str, opD_codigo: str) -> str:
-    # Gera código do operador DIREITO e dps ESQUERDO:
+    # padrão: avaliar esquerda, push; avaliar direita; pop left em %rbx; calcular left - right
+    # queremos resultado em %rax
     return (
-        opD_codigo +
-        "    push %rax\n" +
         opE_codigo +
+        "    push %rax\n" +
+        opD_codigo +
         "    pop %rbx\n" +
-        "    sub %rbx, %rax\n"
+        "    sub %rax, %rbx\n" +    # rbx = left - right
+        "    mov %rbx, %rax\n"
     )
 
 def opBin_mul(opE_codigo: str, opD_codigo: str) -> str:
-    # Gera código do operador ESQUERDO e dps DIREITO:
+    # padrão: avaliar esquerda, push; avaliar direita; pop left em %rbx; rax = right * left (usando imul)
     return (
         opE_codigo +
         "    push %rax\n" +
         opD_codigo +
         "    pop %rbx\n" +
-        "    mul %rbx\n"
+        "    imul %rbx, %rax\n"    # rax = rax * rbx
     )
-
 
 def opBin_div(opE_codigo: str, opD_codigo: str) -> str:
-    # Gera código do operador DIREITO e dps ESQUERDO:
-    # adiciona xor %rdx,%rdx antes do div para evitar lixo em RDX
+    # divisão inteira com sinal: avaliar esquerda, push; avaliar direita; mover divisor -> %rbx;
+    # pop left em %rax; preparar RDX:RAX e idiv %rbx
     return (
-        opD_codigo +
-        "    push %rax\n" +
         opE_codigo +
-        "    pop %rbx\n" +
+        "    push %rax\n" +
+        opD_codigo +
+        "    mov %rax, %rbx\n" +   # rbX = divisor (right)
+        "    pop %rax\n" +        # rax = dividend (left)
         "    xor %rdx, %rdx\n" +
-        "    div %rbx\n"
+        "    idiv %rbx\n"
     )
 
 
-# ===== Diretivas para geração de comandos =====
 def cmp_equal(right_code: str, left_code: str) -> str:
     return (
         right_code +
@@ -121,165 +123,266 @@ def cmp_greater(right_code: str, left_code: str) -> str:
     )
 
 
-# ===== Função principal =====
+# ===== Gerador principal =====
 
 def gera_codigo(ast) -> str:
     """
-    Recebe um Programa (com declaracoes e resultado).
-    e Gera:
-      - variáveis
-      - código que avalia cada declaração e armazena o valor em memória
-      - código que avalia a expressão final (deixando o resultado em %rax)
-      - chamada o runtime (imprime_num e sair)
+    Recebe um Programa (var_decls, fun_decls, comandos (main), resultado).
+    Gera:
+      - seção .bss com variáveis globais
+      - código em .text:
+         - inicializa variáveis globais
+         - executa comandos do main (com support para return)
+         - gera definições de funções (labels), cada função com prologue/epilogue
+      - chamada ao runtime (imprime_num e sair)
+    Observações:
+      - funções devem ter campos param_offsets, local_offsets e frame_size (calculados pelo analisador semântico)
+      - acesso a variáveis locais/params usa offsets relativos a %rbp
+      - acesso a variáveis globais usa RIP-relative: name(%rip)
     """
-    # coletar nomes de variáveis (na ordem das declarações)
+    asm = ""
+
+    # coletar nomes de variáveis globais
     var_names = []
     if isinstance(ast, Programa):
-        var_names = [d.nome for d in ast.declaracoes]
+        var_names = [d.nome for d in ast.var_decls]
     else:
-        # compatibilidade: se receber apenas uma expressão, sem variáveis
         var_names = []
 
-    asm = ""
-    # diretivas de variáveis (antes do .text)
+    # diretivas BSS
     asm += vars_section(var_names)
-    # início da seção .text
-    asm += header()
+    asm += "  .section .text\n"  # Adicionado para iniciar .text antes das funções
 
-    # contador de rótulos para gerar nomes únicos
+    # contador de rótulos
     label_counter = {"n": 0}
     def new_label(base: str) -> str:
         i = label_counter["n"]
         label_counter["n"] += 1
         return f"{base}{i}"
 
-    # função recursiva que gera código e deixa resultado em %rax
-    def rec(arv) -> str:
-        if isinstance(arv, Const):
-            return gen_const(arv.valor)
-        if isinstance(arv, Var):
-            # carregar variável da memória para %rax
-            return f"    mov {arv.nome}, %rax\n"
-        if isinstance(arv, OpBin):
-            if arv.operador == Operadores.SOMA:
-                left = rec(arv.opEsq)
-                right = rec(arv.opDir)
+    # helper para formatar offset(%rbp)
+    def rbp_addr(offset: int) -> str:
+        # offset já contém sinal quando negativo (por exemplo -8)
+        # no assembly precisa ser como -8(%rbp) ou 16(%rbp)
+        return f"{offset}(%rbp)"
+
+    # função recursiva que gera código para expressões e deixa resultado em %rax
+    # current_fun: FunDecl ou None (quando estamos no contexto do main / top-level)
+    def rec(expr, current_fun: FunDecl | None) -> str:
+        if isinstance(expr, Const):
+            return gen_const(expr.valor)
+
+        if isinstance(expr, Var):
+            name = expr.nome
+            # se estamos dentro de uma função e a variável é local/param -> usar offset
+            if current_fun is not None:
+                local_offs = getattr(current_fun, 'local_offsets', {})
+                param_offs = getattr(current_fun, 'param_offsets', {})
+                if name in local_offs:
+                    off = local_offs[name]
+                    return f"    mov {rbp_addr(off)}, %rax\n"
+                if name in param_offs:
+                    off = param_offs[name]
+                    return f"    mov {rbp_addr(off)}, %rax\n"
+            # caso global:
+            return f"    mov {name}(%rip), %rax\n"
+
+        if isinstance(expr, Call):
+            # Avaliar argumentos e empilhar em ordem inversa (último primeiro)
+            code = ""
+            for a in reversed(expr.args):
+                code += rec(a, current_fun)
+                code += "    push %rax\n"
+            code += f"    call {expr.nome}\n"
+            nargs = len(expr.args)
+            if nargs > 0:
+                code += f"    add ${8 * nargs}, %rsp\n"
+            return code
+
+        if isinstance(expr, OpBin):
+            if expr.operador == Operadores.SOMA:
+                left = rec(expr.opEsq, current_fun)
+                right = rec(expr.opDir, current_fun)
                 return opBin_soma(left, right)
-            if arv.operador == Operadores.SUBTRACAO:
-                left = rec(arv.opEsq)
-                right = rec(arv.opDir)
+            if expr.operador == Operadores.SUBTRACAO:
+                left = rec(expr.opEsq, current_fun)
+                right = rec(expr.opDir, current_fun)
                 return opBin_sub(left, right)
-            if arv.operador == Operadores.MULTIPLIC:
-                left = rec(arv.opEsq)
-                right = rec(arv.opDir)
+            if expr.operador == Operadores.MULTIPLIC:
+                left = rec(expr.opEsq, current_fun)
+                right = rec(expr.opDir, current_fun)
                 return opBin_mul(left, right)
-            if arv.operador == Operadores.DIVISAO:
-                left = rec(arv.opEsq)
-                right = rec(arv.opDir)
+            if expr.operador == Operadores.DIVISAO:
+                left = rec(expr.opEsq, current_fun)
+                right = rec(expr.opDir, current_fun)
                 return opBin_div(left, right)
-            # Comparadores: gerar RIGHT primeiro (conforme enunciado), depois LEFT
-            if arv.operador == Operadores.IGUAL_IGUAL:
-                right = rec(arv.opDir)
-                left = rec(arv.opEsq)
+            if expr.operador == Operadores.IGUAL_IGUAL:
+                right = rec(expr.opDir, current_fun)
+                left = rec(expr.opEsq, current_fun)
                 return cmp_equal(right, left)
-            if arv.operador == Operadores.MENOR:
-                right = rec(arv.opDir)
-                left = rec(arv.opEsq)
+            if expr.operador == Operadores.MENOR:
+                right = rec(expr.opDir, current_fun)
+                left = rec(expr.opEsq, current_fun)
                 return cmp_less(right, left)
-            if arv.operador == Operadores.MAIOR:
-                right = rec(arv.opDir)
-                left = rec(arv.opEsq)
+            if expr.operador == Operadores.MAIOR:
+                right = rec(expr.opDir, current_fun)
+                left = rec(expr.opEsq, current_fun)
                 return cmp_greater(right, left)
-            
-            else:
-                raise NotImplementedError(f"Operação {arv.operador} não suportada ainda")
-        raise NotImplementedError(f"Nó desconhecido: {arv}")
+            raise NotImplementedError(f"Operação {expr.operador} não suportada ainda")
 
-    # rótulo de saída para returns
-    exit_label = new_label("Lexit")
+        raise NotImplementedError(f"Nó desconhecido em rec(): {expr}")
 
-    # gera código para um statement (atribuição, if, while, bloco, return)
-    def gen_stmt(stmt) -> str:
-
+    # gera código para statements (Assign, If, While, Block, Return)
+    # current_fun: FunDecl | None
+    def gen_stmt(stmt, current_fun: FunDecl | None, func_return_label: str | None) -> str:
+        # ReturnStmt
         if isinstance(stmt, ReturnStmt):
-            code = rec(stmt.expr)   # deixa valor em %rax
-            code += f"    jmp {exit_label}\n"
+            code = rec(stmt.expr, current_fun)
+            if func_return_label is not None:
+                code += f"    jmp {func_return_label}\n"
+            else:
+                code += f"    jmp {exit_label}\n"
             return code
 
+        # Assign
         if isinstance(stmt, Assign):
-            # Avalia RHS e armazena em memória
-            code = rec(stmt.expr)
-            code += f"    mov %rax, {stmt.nome}\n"
+            code = rec(stmt.expr, current_fun)
+            name = stmt.nome
+            if current_fun is not None:
+                local_offs = getattr(current_fun, 'local_offsets', {})
+                param_offs = getattr(current_fun, 'param_offsets', {})
+                if name in local_offs:
+                    off = local_offs[name]
+                    code += f"    mov %rax, {rbp_addr(off)}\n"
+                    return code
+                if name in param_offs:
+                    off = param_offs[name]
+                    code += f"    mov %rax, {rbp_addr(off)}\n"
+                    return code
+            code += f"    mov %rax, {name}(%rip)\n"
             return code
 
+        # IfStmt
         if isinstance(stmt, IfStmt):
-            # gerar rótulos
             l_false = new_label("Lfalso")
             l_end = new_label("Lfim")
             code = ""
-            # condição -> %rax
-            code += rec(stmt.cond)
-            # testar %rax == 0
+            code += rec(stmt.cond, current_fun)
             code += "    cmp $0, %rax\n"
             code += f"    jz {l_false}\n"
-            # then branch
             for s in stmt.then_stmts:
-                code += gen_stmt(s)
-            # pular else
-            code += f"    jmp {l_end}\n\n"
-            # else label
+                code += gen_stmt(s, current_fun, func_return_label)
+            code += f"    jmp {l_end}\n"
             code += f"{l_false}:\n"
             if stmt.else_stmts is not None:
                 for s in stmt.else_stmts:
-                    code += gen_stmt(s)
-            code += f"\n{l_end}:\n"
-            return code
-
-        if isinstance(stmt, WhileStmt):
-            l_begin = new_label("Linicio")
-            l_end = new_label("Lfim")
-            code = ""
-            code += f"{l_begin}:\n"
-            # condição
-            code += rec(stmt.cond)
-            code += "    cmp $0, %rax\n"
-            code += f"    jz {l_end}\n"
-            # corpo
-            for s in stmt.body:
-                code += gen_stmt(s)
-            # voltar ao início
-            code += f"    jmp {l_begin}\n\n"
+                    code += gen_stmt(s, current_fun, func_return_label)
             code += f"{l_end}:\n"
             return code
 
+        # WhileStmt
+        if isinstance(stmt, WhileStmt):
+            l_begin = new_label("Linicio")
+            l_end = new_label("Lfim")
+            code = f"{l_begin}:\n"
+            code += rec(stmt.cond, current_fun)
+            code += "    cmp $0, %rax\n"
+            code += f"    jz {l_end}\n"
+            for s in stmt.body:
+                code += gen_stmt(s, current_fun, func_return_label)
+            code += f"    jmp {l_begin}\n"
+            code += f"{l_end}:\n"
+            return code
+
+        # BlockStmt
         if isinstance(stmt, BlockStmt):
             code = ""
             for s in stmt.stmts:
-                code += gen_stmt(s)
+                code += gen_stmt(s, current_fun, func_return_label)
             return code
 
-        raise NotImplementedError(f"Stmt desconhecido: {stmt}")
+        raise NotImplementedError(f"Stmt desconhecido em gen_stmt(): {stmt}")
 
+    # rótulo de saída do main (_start) para tratar return no main
+    exit_label = new_label("Lexit_main_")
 
-    # 1) gerar código para cada declaração: calcular expressão e armazenar em variável
+    # ---------------------------
+    # 1) Gerar código de cada função (fun_decls) ANTES de _start
+    # ---------------------------
     if isinstance(ast, Programa):
-        for d in ast.declaracoes:
-            # avalia expressão da declaração (resultado em %rax)
-            asm += rec(d.expr)
-            # armazena %rax na variável d.nome
-            asm += f"    mov %rax, {d.nome}\n"
-        # 2) gerar código para os comandos do corpo (em ordem)
+        for f in ast.fun_decls:
+            # tornar visível
+            asm += f".globl {f.nome}\n"
+            asm += f"{f.nome}:\n"
+
+            # prologue: salvar rbp, apontar rbp para o topo do frame e alocar espaço
+            asm += "    push %rbp\n"
+            asm += "    mov %rsp, %rbp\n"
+            frame_size = getattr(f, 'frame_size', 0)
+            if frame_size and frame_size > 0:
+                asm += f"    sub ${frame_size}, %rsp\n"
+            asm += "\n"
+
+            # label de retorno da função (ponto comum para epílogo)
+            func_ret_label = new_label(f"Lret_{f.nome}_")
+
+            # inicializar declarações locais (em ordem)
+            for d in f.local_decls:
+                asm += rec(d.expr, f)       # resultado em %rax
+                off = f.local_offsets.get(d.nome)
+                if off is None:
+                    raise RuntimeError(f"Offset da local '{d.nome}' não encontrado para função {f.nome}")
+                asm += f"    mov %rax, {rbp_addr(off)}\n"
+
+            # gerar comandos do corpo
+            for c in f.comandos:
+                asm += gen_stmt(c, f, func_ret_label)
+
+            # gerar código para expressão de resultado (deixa %rax)
+            asm += rec(f.resultado, f)
+            # pular para epílogo comum (assim retornos internos também caem no epílogo)
+            asm += f"    jmp {func_ret_label}\n\n"
+
+            # epílogo
+            asm += f"{func_ret_label}:\n"
+            if frame_size and frame_size > 0:
+                asm += f"    add ${frame_size}, %rsp\n"
+            asm += "    pop %rbp\n"
+            asm += "    ret\n\n"
+
+    # ---------------------------
+    # 2) Inicializar variáveis globais e main com header()
+    # ---------------------------
+    asm += header()
+
+    asm += "    # === inicializa variáveis globais ===\n"
+    if isinstance(ast, Programa):
+        for d in ast.var_decls:
+            asm += rec(d.expr, None)
+            asm += f"    mov %rax, {d.nome}(%rip)\n"
+    asm += "\n"
+
+    asm += "    # === main (bloco principal) ===\n"
+    # opcional: prólogo do main (útil para depuração/alinhamento) - seu exemplo usou push/mov
+    asm += "    push %rbp\n"
+    asm += "    mov %rsp, %rbp\n\n"
+
+    if isinstance(ast, Programa):
         for c in ast.comandos:
-            asm += gen_stmt(c)
-        # 3) gerar código para expressão final (deixa resultado em %rax)
-        asm += rec(ast.resultado)
+            asm += gen_stmt(c, None, None)
+        asm += rec(ast.resultado, None)
     else:
-        # compatibilidade: se ast for só uma expressão
-        asm += rec(ast)
+        asm += rec(ast, None)
 
-    # insere label de saída usado por returns dentro dos blocos
-    asm += f"{exit_label}:\n"
+    # inserir label de saída do main (para returns do main saltarem para cá)
+    asm += f"{exit_label}:\n\n"
 
-    # footer — imprime o número e sai
+    # ---------------------------
+    # 3) footer() chamado AQUI, dentro do main, após o resultado
+    # ---------------------------
     asm += footer()
+
+    # Adicionar nova linha extra no final para evitar warning de EOF
+    asm += "\n"
+
     return asm

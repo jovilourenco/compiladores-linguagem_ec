@@ -12,6 +12,7 @@ import os
 import sys
 from analisadorLexico import AnalizadorLexico
 from analisadorSintatico import Parser, ParserError
+from analisadorSemantico import build_symbol_table_and_offsets
 from helpers.arvore import Exp
 from helpers.arvore_print_rich import build_rich_tree
 from rich import print as rprint
@@ -51,8 +52,7 @@ def main():
 
     # 3.5) Verificação semântica (antes de executar/avaliar)
     try:
-        # chama o método de verificação estática que percorre declarações, comandos e retorno
-        ast.verifica_semantica()
+        symtab = build_symbol_table_and_offsets(ast)
     except NameError as e:
         print("Erro semântico:", e)
         sys.exit(1)
@@ -67,9 +67,9 @@ def main():
         sys.exit(1)
 
     # 5) Geração da AST
-    rich_tree = build_rich_tree(ast)
-    print("\n--- Printa árvore com Rich ---")
-    rprint(rich_tree)
+    #rich_tree = build_rich_tree(ast)
+    #print("\n--- Printa árvore com Rich ---")
+    #rprint(rich_tree)
 
     print("\n--- Gerando código Assembly ---")
     os.makedirs("assemblys", exist_ok=True)

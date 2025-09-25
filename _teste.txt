@@ -1,12 +1,8 @@
-fun fib(n) {
-  var res = 0;
-  if (n < 2) {
-    res = 1;
-  } else {
-    res = fib(n - 1) + fib(n - 2);
-  }
-  return res;
+var x = 10;
+
+fun foo() {
+  var x = 5;
+  return x;
 }
-main {
-  return fib(5);
-}
+
+main { return foo(); }

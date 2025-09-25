@@ -1,56 +1,41 @@
   .section .bss
-  .lcomm a, 8
-  .lcomm b, 8
-
+  .lcomm x, 8
 
   .section .text
+.globl foo
+foo:
+    push %rbp
+    mov %rsp, %rbp
+    sub $8, %rsp
+
+    mov $5, %rax
+    mov %rax, -8(%rbp)
+    mov -8(%rbp), %rax
+    jmp Lret_foo_1
+
+Lret_foo_1:
+    add $8, %rsp
+    pop %rbp
+    ret
+
+
   .globl _start
 
 _start:
-    mov $5, %rax
-    mov %rax, a
-    mov $5, %rax
-    mov %rax, b
-    mov b, %rax
-    push %rax
-    mov a, %rax
-    pop %rbx
-    xor %rcx, %rcx
-    cmp %rbx, %rax
-    setl %cl
-    mov %rcx, %rax
-    cmp $0, %rax
-    jz Lfalso1
-    mov $1, %rax
-    jmp Lexit0
-    jmp Lfim2
+    # === inicializa variáveis globais ===
+    mov $10, %rax
+    mov %rax, x(%rip)
 
-Lfalso1:
-    mov b, %rax
-    push %rax
-    mov a, %rax
-    pop %rbx
-    xor %rcx, %rcx
-    cmp %rbx, %rax
-    setz %cl
-    mov %rcx, %rax
-    cmp $0, %rax
-    jz Lfalso3
-    mov $2, %rax
-    jmp Lexit0
-    jmp Lfim4
+    # === main (bloco principal) ===
+    push %rbp
+    mov %rsp, %rbp
 
-Lfalso3:
-    mov $3, %rax
-    jmp Lexit0
+    call foo
+Lexit_main_0:
 
-Lfim4:
-
-Lfim2:
-    mov $0, %rax
-Lexit0:
 
     call imprime_num
     call sair
-    
+
     .include "runtime.s"
+
