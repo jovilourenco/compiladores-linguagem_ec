@@ -1,20 +1,36 @@
-  .section .bss
-  .lcomm x, 8
-
   .section .text
-.globl foo
-foo:
+.globl a
+a:
     push %rbp
     mov %rsp, %rbp
-    sub $8, %rsp
 
-    mov $5, %rax
-    mov %rax, -8(%rbp)
-    mov -8(%rbp), %rax
-    jmp Lret_foo_1
-
-Lret_foo_1:
+    mov 16(%rbp), %rax
+    push %rax
+    call b
     add $8, %rsp
+    push %rax
+    mov $1, %rax
+    pop %rbx
+    add %rbx, %rax
+    jmp Lret_a_1
+
+Lret_a_1:
+    pop %rbp
+    ret
+
+.globl b
+b:
+    push %rbp
+    mov %rsp, %rbp
+
+    mov 16(%rbp), %rax
+    push %rax
+    mov $2, %rax
+    pop %rbx
+    mul %rbx
+    jmp Lret_b_2
+
+Lret_b_2:
     pop %rbp
     ret
 
@@ -22,15 +38,14 @@ Lret_foo_1:
   .globl _start
 
 _start:
-    # === inicializa variáveis globais ===
-    mov $10, %rax
-    mov %rax, x(%rip)
 
-    # === main (bloco principal) ===
     push %rbp
     mov %rsp, %rbp
 
-    call foo
+    mov $3, %rax
+    push %rax
+    call a
+    add $8, %rsp
 Lexit_main_0:
 
 

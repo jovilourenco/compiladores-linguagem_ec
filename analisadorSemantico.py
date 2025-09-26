@@ -77,7 +77,7 @@ def build_symbol_table_and_offsets(program: Programa) -> Dict[str, Any]:
     for f in fun_decls:
         _compute_offsets_for_function(f)
 
-    # ---------- Funções auxiliares de checagem de expressões e comandos ----------
+    # Funções auxiliares de checagem de expressões e comandos
     def check_expr(e, local_names: Set[str], available_funs: Set[str]):
         """Verifica recursivamente uma expressão e levanta NameError em violação."""
         # Const
@@ -165,8 +165,8 @@ def build_symbol_table_and_offsets(program: Programa) -> Dict[str, Any]:
                 raise NameError(f"Erro semântico: variável local '{lname}' redeclarada como parâmetro em função '{f.nome}'")
 
         # construir ambiente local inicial (somente nomes, valores simbólicos)
-        # aqui usaremos local_names para verificação de nomes; as referências a funções são verificadas via partial_funs+symtab
-        # definimos available_funs como as funções já em partial_funs mais a própria (permitir recursão direta)
+        # aqui usa local_names para verificação de nomes; as referências a funções são verificadas via partial_funs+symtab
+        # define available_funs como as funções já em partial_funs mais a própria (permitir recursão direta)
         available_funs = set(partial_funs.keys()) | {f.nome}
 
         # checar inicializadores de declarações locais (podem usar params e globals e previously locals)
@@ -190,8 +190,8 @@ def build_symbol_table_and_offsets(program: Programa) -> Dict[str, Any]:
         # depois de tudo OK, registramos f em partial_funs para funções posteriores poderem chamá-la
         partial_funs[f.nome] = f
 
-    # ---------- Checar corpo do main (programa principal) ----------
-    # main não tem vardecl locais por sua restrição — parser já evita, mas checagem extra:
+    # checar corpo do main (programa principal)
+    # main não tem vardecl locais por sua restrição — parser já evita, checagem extra:
     main_locals = getattr(program, 'main_local_decls', [])
     if main_locals:
         raise NameError("Erro semântico: 'main' não pode conter variáveis locais (regra do projeto)")
@@ -205,5 +205,5 @@ def build_symbol_table_and_offsets(program: Programa) -> Dict[str, Any]:
     if getattr(program, 'resultado', None) is not None:
         check_expr(program.resultado, set(symtab.keys()), available_funs_main)
 
-    # tudo ok — retorna symtab (e funções já têm param_offsets/local_offsets/frame_size)
+    # tudo ok — retorna tabela de símbolos (e funções já têm param_offsets/local_offsets/frame_size)
     return symtab

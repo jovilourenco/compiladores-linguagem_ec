@@ -69,11 +69,11 @@ def opBin_mul(opE_codigo: str, opD_codigo: str) -> str:
         "    push %rax\n" +
         opD_codigo +
         "    pop %rbx\n" +
-        "    imul %rbx, %rax\n"    # rax = rax * rbx
+        "    mul %rbx\n"    # rax = rax * rbx
     )
 
 def opBin_div(opE_codigo: str, opD_codigo: str) -> str:
-    # divisão inteira com sinal: avaliar esquerda, push; avaliar direita; mover divisor -> %rbx;
+    # divisão inteira com sinal: avaliar esquerda, push; avaliar direita; mover divisor pra %rbx;
     # pop left em %rax; preparar RDX:RAX e idiv %rbx
     return (
         opE_codigo +
@@ -82,7 +82,7 @@ def opBin_div(opE_codigo: str, opD_codigo: str) -> str:
         "    mov %rax, %rbx\n" +   # rbX = divisor (right)
         "    pop %rax\n" +        # rax = dividend (left)
         "    xor %rdx, %rdx\n" +
-        "    idiv %rbx\n"
+        "    div %rbx\n"
     )
 
 
@@ -149,7 +149,7 @@ def gera_codigo(ast) -> str:
     else:
         var_names = []
 
-    # diretivas BSS
+    # diretivas bss
     asm += vars_section(var_names)
     asm += "  .section .text\n"  # Adicionado para iniciar .text antes das funções
 
@@ -167,7 +167,6 @@ def gera_codigo(ast) -> str:
         return f"{offset}(%rbp)"
 
     # função recursiva que gera código para expressões e deixa resultado em %rax
-    # current_fun: FunDecl ou None (quando estamos no contexto do main / top-level)
     def rec(expr, current_fun: FunDecl | None) -> str:
         if isinstance(expr, Const):
             return gen_const(expr.valor)
@@ -233,7 +232,6 @@ def gera_codigo(ast) -> str:
         raise NotImplementedError(f"Nó desconhecido em rec(): {expr}")
 
     # gera código para statements (Assign, If, While, Block, Return)
-    # current_fun: FunDecl | None
     def gen_stmt(stmt, current_fun: FunDecl | None, func_return_label: str | None) -> str:
         # ReturnStmt
         if isinstance(stmt, ReturnStmt):
@@ -306,9 +304,7 @@ def gera_codigo(ast) -> str:
     # rótulo de saída do main (_start) para tratar return no main
     exit_label = new_label("Lexit_main_")
 
-    # ---------------------------
-    # 1) Gerar código de cada função (fun_decls) ANTES de _start
-    # ---------------------------
+    #Gerar código de cada função (fun_decls) ANTES de _start
     if isinstance(ast, Programa):
         for f in ast.fun_decls:
             # tornar visível
@@ -350,20 +346,16 @@ def gera_codigo(ast) -> str:
             asm += "    pop %rbp\n"
             asm += "    ret\n\n"
 
-    # ---------------------------
-    # 2) Inicializar variáveis globais e main com header()
-    # ---------------------------
+
+    #inicializar variáveis globais e main com header()
     asm += header()
 
-    asm += "    # === inicializa variáveis globais ===\n"
     if isinstance(ast, Programa):
         for d in ast.var_decls:
             asm += rec(d.expr, None)
             asm += f"    mov %rax, {d.nome}(%rip)\n"
     asm += "\n"
 
-    asm += "    # === main (bloco principal) ===\n"
-    # opcional: prólogo do main (útil para depuração/alinhamento) - seu exemplo usou push/mov
     asm += "    push %rbp\n"
     asm += "    mov %rsp, %rbp\n\n"
 
@@ -377,12 +369,10 @@ def gera_codigo(ast) -> str:
     # inserir label de saída do main (para returns do main saltarem para cá)
     asm += f"{exit_label}:\n\n"
 
-    # ---------------------------
-    # 3) footer() chamado AQUI, dentro do main, após o resultado
-    # ---------------------------
+    # chama o footer (imprime_num e sair do professor)
     asm += footer()
 
-    # Adicionar nova linha extra no final para evitar warning de EOF
+    # adicionar nova linha extra no final para evitar warning de EOF (Não sei pq está dando isso)
     asm += "\n"
 
     return asm

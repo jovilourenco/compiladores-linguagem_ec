@@ -1,8 +1,11 @@
-var x = 10;
-
-fun foo() {
-  var x = 5;
-  return x;
+fun a(x) {
+  return b(x) + 1;
 }
 
-main { return foo(); }
+fun b(x) {
+  return x * 2;
+}
+
+main {
+  return a(3);
+}
