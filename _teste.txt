@@ -1,11 +1,13 @@
-fun a(x) {
-  return b(x) + 1;
-}
-
-fun b(x) {
-  return x * 2;
+fun fact(n) {
+  var r = 0;
+  if (n < 2) {
+    r = 1;
+  } else {
+    r = n * fact(n - 1);
+  }
+  return r;
 }
 
 main {
-  return a(3);
+  return fact(6);
 }

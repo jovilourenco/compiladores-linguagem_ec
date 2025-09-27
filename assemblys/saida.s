@@ -1,36 +1,46 @@
   .section .text
-.globl a
-a:
+.globl fact
+fact:
     push %rbp
     mov %rsp, %rbp
+    sub $8, %rsp
 
+    mov $0, %rax
+    mov %rax, -8(%rbp)
+    mov $2, %rax
+    push %rax
+    mov 16(%rbp), %rax
+    pop %rbx
+    xor %rcx, %rcx
+    cmp %rbx, %rax
+    setl %cl
+    mov %rcx, %rax
+    cmp $0, %rax
+    jz Lfalso2
+    mov $1, %rax
+    mov %rax, -8(%rbp)
+    jmp Lfim3
+Lfalso2:
     mov 16(%rbp), %rax
     push %rax
-    call b
-    add $8, %rsp
+    mov 16(%rbp), %rax
     push %rax
     mov $1, %rax
     pop %rbx
-    add %rbx, %rax
-    jmp Lret_a_1
-
-Lret_a_1:
-    pop %rbp
-    ret
-
-.globl b
-b:
-    push %rbp
-    mov %rsp, %rbp
-
-    mov 16(%rbp), %rax
+    sub %rax, %rbx
+    mov %rbx, %rax
     push %rax
-    mov $2, %rax
+    call fact
+    add $8, %rsp
     pop %rbx
     mul %rbx
-    jmp Lret_b_2
+    mov %rax, -8(%rbp)
+Lfim3:
+    mov -8(%rbp), %rax
+    jmp Lret_fact_1
 
-Lret_b_2:
+Lret_fact_1:
+    add $8, %rsp
     pop %rbp
     ret
 
@@ -42,9 +52,9 @@ _start:
     push %rbp
     mov %rsp, %rbp
 
-    mov $3, %rax
+    mov $6, %rax
     push %rax
-    call a
+    call fact
     add $8, %rsp
 Lexit_main_0:
 

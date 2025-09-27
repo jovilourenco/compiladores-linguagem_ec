@@ -5,7 +5,7 @@
 **Aluno:** João Victor Lourenço da Silva
 **Matrícula:** 20220005997
 
-Este projeto é a implementação em Python de um compilador para a linguagem **CMD**, desenvolvida como parte da atividade 09 da disciplina de Construção de Compiladores I.
+Este projeto é a implementação em Python de um compilador para a linguagem **FUN**, desenvolvida como parte da atividade 10 da disciplina de Construção de Compiladores I.
 
 ---
 
@@ -20,21 +20,26 @@ Este projeto é a implementação em Python de um compilador para a linguagem **
 
 ---
 
-## Gramática da Linguagem CMD
+## Gramática da Linguagem FUN
 
-A gramática utilizada para a linguagem CMD é:
+A gramática utilizada para a linguagem FUN é:
 
 ```python
-programa ::= decl* '{' comando* 'return' exp ';' '}'
-decl ::= IDENT '=' exp ';'
-comando ::= atib | if | while
+programa ::= decl* 'main' '{' comando* 'return' exp ';' '}'
+decl ::= vardecl | fundecl
+vardecl ::= 'var' IDENT '=' exp ';'
+fundecl ::= 'fun' IDENT '(' arglist? ')' '{' vardecl* comando* 'return' exp ';' '}'
+arglist ::= IDENT (',' IDENT)*
+comando ::= atrib | if | while | bloco
 atrib ::= IDENT '=' exp ';'
-if ::= 'if' exp '{' comando* '}' ( 'else' '{' comando* '}' )?
-while ::= 'while' exp '{' comando* '}'
+if ::= 'if' '(' exp ')' '{' comando* '}' ( 'else' '{' comando* '}' )?
+while ::= 'while' '(' exp ')' '{' comando* '}'
+bloco ::= '{' comando* '}'
 exp ::= exp_a ( ('<' | '>' | '==') exp_a )*
 exp_a ::= exp_m (('+'|'-') exp_m)*
-exp_m ::= prim (('*'|'/') prim)
-prim ::= num | ident | '(' exp_c ')'
+exp_m ::= prim ((''|'/') prim)
+prim ::= NUM | IDENT | IDENT '(' explist? ')' | '(' exp ')'
+explist ::= exp (',' exp)*
 ```
 
 Algo que observo: Na implementação dessa gramática, criei uma pequena variação. Após um comando como `if` ou `while`, o programa espera um '('. o formato dos comandos é algo do tipo: `comando (expressão) '{'comando'}'`
@@ -55,11 +60,14 @@ O `main.py` executa as seguintes etapas, nesta ordem:
 
 1. **Análise Léxica**: Imprime os tokens encontrados.
 2. **Análise Sintática**: Imprime a Árvore de Sintaxe Abstrata (AST).
-3. **Geração e Avaliação**: Imprime a expressão gerada (`ast.gerador()`) e o resultado da avaliação/interpretação (`ast.avaliador()`).
-4. **Visualização da AST**: Imprime a árvore de sintaxe abstrata em formato "rich".
-5. **Geração de Assembly**: Cria o arquivo `saida.s` no diretório `assemblys`.
+3. **Checagem semântica**: tabela de símbolos, offsets.
+4. **Avaliação e interpretação**: Imprime a expressão gerada (`ast.gerador()`) e o resultado da avaliação/interpretação (`ast.avaliador()`).
+5. **Visualização da AST**: Imprime a árvore de sintaxe abstrata em formato "rich".
+6. **Geração de Assembly**: Cria o arquivo `saida.s` no diretório `assemblys`.
 
-Também é possível executar cada módulo individualmente (por exemplo, `analisadorLexico.py` ou `analisadorSemantico.py`) para testes unitários.
+Também é possível executar cada módulo individualmente (por exemplo, `analisadorLexico.py`, `analisadorSemantico.py` ou `analisadorSemantico.py`) para testes unitários.
+
+Observo que, agora, para manter o padrão de modularização, criei o analisador semântico para manter e gerenciar a tabela de símbolos e offsets do código de máquina.
 
 ---
 
@@ -118,10 +126,18 @@ A seguir, um exemplo de código CMD e o respectivo assembly gerado.
 **Código CMD:**
 
 ```python
-x = (7 + 4) * 12;
-y = x * 3 + 11;
-{
-  return (x * y) + (x * 11) + (y * 13);
+fun fact(n) {
+  var r = 0;
+  if (n < 2) {
+    r = 1;
+  } else {
+    r = n * fact(n - 1);
+  }
+  return r;
+}
+
+main {
+  return fact(6);
 }
 ```
 
@@ -130,36 +146,66 @@ y = x * 3 + 11;
 Snippet de código
 
 ```python
-  .lcomm x, 8
-  .lcomm y, 8
-
   .section .text
+.globl fact
+fact:
+    push %rbp
+    mov %rsp, %rbp
+    sub $8, %rsp
+
+    mov $0, %rax
+    mov %rax, -8(%rbp)
+    mov $2, %rax
+    push %rax
+    mov 16(%rbp), %rax
+    pop %rbx
+    xor %rcx, %rcx
+    cmp %rbx, %rax
+    setl %cl
+    mov %rcx, %rax
+    cmp $0, %rax
+    jz Lfalso2
+    mov $1, %rax
+    mov %rax, -8(%rbp)
+    jmp Lfim3
+Lfalso2:
+    mov 16(%rbp), %rax
+    push %rax
+    mov 16(%rbp), %rax
+    push %rax
+    mov $1, %rax
+    pop %rbx
+    sub %rax, %rbx
+    mov %rbx, %rax
+    push %rax
+    call fact
+    add $8, %rsp
+    pop %rbx
+    mul %rbx
+    mov %rax, -8(%rbp)
+Lfim3:
+    mov -8(%rbp), %rax
+    jmp Lret_fact_1
+
+Lret_fact_1:
+    add $8, %rsp
+    pop %rbp
+    ret
+
+
   .globl _start
 
 _start:
-    mov $7, %rax
-    push %rax
-    mov $4, %rax
-    pop %rbx
-    add %rbx, %rax
-    push %rax
-    mov $12, %rax
-    pop %rbx
-    mul %rbx
-    mov %rax, x
 
-    mov x, %rax
-    push %rax
-    mov $3, %rax
-    pop %rbx
-    mul %rbx
-    push %rax
-    mov $11, %rax
-    pop %rbx
-    add %rbx, %rax
-    mov %rax, y
+    push %rbp
+    mov %rsp, %rbp
 
-    ; ... código da expressão final ...
+    mov $6, %rax
+    push %rax
+    call fact
+    add $8, %rsp
+Lexit_main_0:
+
 
     call imprime_num
     call sair
