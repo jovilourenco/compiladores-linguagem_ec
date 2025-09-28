@@ -128,7 +128,8 @@ class Parser:
     def analisaExpC(self) -> Exp:
         esq = self.analisaExpA()
         tok = self.get()
-        while tok is not None and tok.tipo in (Operadores.MENOR, Operadores.MAIOR, Operadores.IGUAL_IGUAL):
+        while tok is not None and tok.tipo in (Operadores.MENOR, Operadores.MAIOR, Operadores.IGUAL_IGUAL,
+            Operadores.MENOR_IGUAL, Operadores.MAIOR_IGUAL, Operadores.DIFERENTE):
             operador = tok.tipo
             self.proximo_token()
             dir = self.analisaExpA()

@@ -1,12 +1,6 @@
-fun f(n) { 
-  var r = 0; 
-  if (n < 2) { 
-    r = n; 
-  } else { 
-    r = (n % 2) + f(n-1); 
-  } 
-  return r; 
-} 
-main {
-  return f(5);
+var i = 0;
+var sum = 0;
+main{
+  while (i <= 5){ sum = sum + i; i = i + 1; }
+  return sum;
 }

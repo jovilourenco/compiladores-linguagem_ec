@@ -114,6 +114,12 @@ class OpBin(Exp):
             return 1 if esquerda > direita else 0
         if self.operador == Operadores.IGUAL_IGUAL:
             return 1 if esquerda == direita else 0
+        if self.operador == Operadores.MENOR_IGUAL:
+            return 1 if esquerda <= direita else 0
+        if self.operador == Operadores.MAIOR_IGUAL:
+            return 1 if esquerda >= direita else 0
+        if self.operador == Operadores.DIFERENTE:
+            return 1 if esquerda != direita else 0
         raise ValueError(f"Operador desconhecido: {self.operador}")
 
     def gerador(self) -> str:
@@ -122,10 +128,13 @@ class OpBin(Exp):
             Operadores.SUBTRACAO: '-',
             Operadores.MULTIPLIC: '*',
             Operadores.DIVISAO: '/',
+            Operadores.RESTO: '%',
             Operadores.MENOR: '<',
             Operadores.MAIOR: '>',
             Operadores.IGUAL_IGUAL: '==',
-            Operadores.RESTO: '%',
+            Operadores.MENOR_IGUAL: '<=',
+            Operadores.MAIOR_IGUAL: '>=',
+            Operadores.DIFERENTE: '!=',
         }
         simb = op_map.get(self.operador, '?')
         return f"({self.opEsq.gerador()} {simb} {self.opDir.gerador()})"

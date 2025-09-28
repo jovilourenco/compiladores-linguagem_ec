@@ -85,6 +85,21 @@ class AnalizadorLexico:
             self.proximo_token()
             self.proximo_token()
             return Token(Operadores.IGUAL_IGUAL, '==', inicio, self.linha)
+        
+        if carac == '<' and self.verificaProxToken() == '=':
+            self.proximo_token()
+            self.proximo_token()
+            return Token(Operadores.MENOR_IGUAL, '<=', inicio, self.linha)
+
+        if carac == '>' and self.verificaProxToken() == '=':
+            self.proximo_token()
+            self.proximo_token()
+            return Token(Operadores.MAIOR_IGUAL, '>=', inicio, self.linha)
+
+        if carac == '!' and self.verificaProxToken() == '=':
+            self.proximo_token()
+            self.proximo_token()
+            return Token(Operadores.DIFERENTE, '!=', inicio, self.linha)
 
         self.proximo_token() # desloca o ponteiro
 

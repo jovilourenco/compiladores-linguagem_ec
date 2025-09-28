@@ -12,6 +12,9 @@ class Operadores(Enum):
     DIVISAO = auto()
     MENOR = auto()
     MAIOR = auto()
+    MENOR_IGUAL = auto()
+    MAIOR_IGUAL = auto()
+    DIFERENTE = auto()
     IGUAL_IGUAL = auto()
     RESTO = auto()
 

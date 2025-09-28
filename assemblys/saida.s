@@ -1,68 +1,46 @@
+  .section .bss
+  .lcomm i, 8
+  .lcomm sum, 8
+
   .section .text
-.globl f
-f:
-    push %rbp
-    mov %rsp, %rbp
-    sub $8, %rsp
-
-    mov $0, %rax
-    mov %rax, -8(%rbp)
-    mov $2, %rax
-    push %rax
-    mov 16(%rbp), %rax
-    pop %rbx
-    xor %rcx, %rcx
-    cmp %rbx, %rax
-    setl %cl
-    mov %rcx, %rax
-    cmp $0, %rax
-    jz Lfalso2
-    mov 16(%rbp), %rax
-    mov %rax, -8(%rbp)
-    jmp Lfim3
-Lfalso2:
-    mov 16(%rbp), %rax
-    push %rax
-    mov $2, %rax
-    mov %rax, %rbx
-    pop %rax
-    xor %rdx, %rdx
-    div %rbx
-    mov %rdx, %rax
-    push %rax
-    mov 16(%rbp), %rax
-    push %rax
-    mov $1, %rax
-    pop %rbx
-    sub %rax, %rbx
-    mov %rbx, %rax
-    push %rax
-    call f
-    add $8, %rsp
-    pop %rbx
-    add %rbx, %rax
-    mov %rax, -8(%rbp)
-Lfim3:
-    mov -8(%rbp), %rax
-    jmp Lret_f_1
-
-Lret_f_1:
-    add $8, %rsp
-    pop %rbp
-    ret
-
 
   .globl _start
 
 _start:
+    mov $0, %rax
+    mov %rax, i(%rip)
+    mov $0, %rax
+    mov %rax, sum(%rip)
 
     push %rbp
     mov %rsp, %rbp
 
+Linicio1:
     mov $5, %rax
     push %rax
-    call f
-    add $8, %rsp
+    mov i(%rip), %rax
+    pop %rbx
+    xor %rcx, %rcx
+    cmp %rbx, %rax
+    setle %cl
+    mov %rcx, %rax
+    cmp $0, %rax
+    jz Lfim2
+    mov sum(%rip), %rax
+    push %rax
+    mov i(%rip), %rax
+    pop %rbx
+    add %rbx, %rax
+    mov %rax, sum(%rip)
+    mov i(%rip), %rax
+    push %rax
+    mov $1, %rax
+    pop %rbx
+    add %rbx, %rax
+    mov %rax, i(%rip)
+    jmp Linicio1
+Lfim2:
+    mov sum(%rip), %rax
 Lexit_main_0:
 
 

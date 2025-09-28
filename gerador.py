@@ -134,6 +134,42 @@ def cmp_greater(right_code: str, left_code: str) -> str:
         "    mov %rcx, %rax\n"
     )
 
+def cmp_le(right_code: str, left_code: str) -> str:
+    return (
+        right_code +
+        "    push %rax\n" +
+        left_code +
+        "    pop %rbx\n" +
+        "    xor %rcx, %rcx\n" +
+        "    cmp %rbx, %rax\n" +
+        "    setle %cl\n" +
+        "    mov %rcx, %rax\n"
+    )
+
+def cmp_ge(right_code: str, left_code: str) -> str:
+    return (
+        right_code +
+        "    push %rax\n" +
+        left_code +
+        "    pop %rbx\n" +
+        "    xor %rcx, %rcx\n" +
+        "    cmp %rbx, %rax\n" +
+        "    setge %cl\n" +
+        "    mov %rcx, %rax\n"
+    )
+
+def cmp_ne(right_code: str, left_code: str) -> str:
+    return (
+        right_code +
+        "    push %rax\n" +
+        left_code +
+        "    pop %rbx\n" +
+        "    xor %rcx, %rcx\n" +
+        "    cmp %rbx, %rax\n" +
+        "    setne %cl\n" +
+        "    mov %rcx, %rax\n"
+    )
+
 
 # ===== Gerador principal =====
 
@@ -243,6 +279,18 @@ def gera_codigo(ast) -> str:
                 right = rec(expr.opDir, current_fun)
                 left = rec(expr.opEsq, current_fun)
                 return cmp_greater(right, left)
+            if expr.operador == Operadores.MENOR_IGUAL:
+                right = rec(expr.opDir, current_fun)
+                left = rec(expr.opEsq, current_fun)
+                return cmp_le(right, left)
+            if expr.operador == Operadores.MAIOR_IGUAL:
+                right = rec(expr.opDir, current_fun)
+                left = rec(expr.opEsq, current_fun)
+                return cmp_ge(right, left)
+            if expr.operador == Operadores.DIFERENTE:
+                right = rec(expr.opDir, current_fun)
+                left = rec(expr.opEsq, current_fun)
+                return cmp_ne(right, left)
             raise NotImplementedError(f"Operação {expr.operador} não suportada ainda")
 
         raise NotImplementedError(f"Nó desconhecido em rec(): {expr}")
