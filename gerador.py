@@ -85,6 +85,18 @@ def opBin_div(opE_codigo: str, opD_codigo: str) -> str:
         "    div %rbx\n"
     )
 
+def opBin_mod(opE_codigo: str, opD_codigo: str) -> str:
+    # left % right  --> calcula resto (usa idiv, resto em %rdx)
+    return (
+        opE_codigo +                
+        "    push %rax\n" +
+        opD_codigo +                # deixa right (divisor) em %rax
+        "    mov %rax, %rbx\n" +    
+        "    pop %rax\n" +          
+        "    xor %rdx, %rdx\n" +    
+        "    div %rbx\n" +          # depois da divisão, o resto sempre fica em %rdx
+        "    mov %rdx, %rax\n"      # resultado = resto -> %rax
+    )
 
 def cmp_equal(right_code: str, left_code: str) -> str:
     return (
@@ -215,6 +227,10 @@ def gera_codigo(ast) -> str:
                 left = rec(expr.opEsq, current_fun)
                 right = rec(expr.opDir, current_fun)
                 return opBin_div(left, right)
+            if expr.operador == Operadores.RESTO:
+                left = rec(expr.opEsq, current_fun)
+                right = rec(expr.opDir, current_fun)
+                return opBin_mod(left, right)
             if expr.operador == Operadores.IGUAL_IGUAL:
                 right = rec(expr.opDir, current_fun)
                 left = rec(expr.opEsq, current_fun)

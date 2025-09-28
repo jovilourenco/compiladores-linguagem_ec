@@ -97,6 +97,8 @@ class AnalizadorLexico:
             return Token(Operadores.MULTIPLIC, carac, inicio, self.linha)
         if carac == '/':
             return Token(Operadores.DIVISAO, carac, inicio, self.linha)
+        if carac == '%':
+            return Token(Operadores.RESTO, carac, inicio, self.linha)
 
         # Verifica se é < ou >
         if carac == '<':

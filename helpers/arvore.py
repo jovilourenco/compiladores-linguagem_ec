@@ -104,6 +104,10 @@ class OpBin(Exp):
             if direita == 0:
                 raise ZeroDivisionError("Divisão por zero")
             return esquerda // direita
+        if self.operador == Operadores.RESTO:
+            if direita == 0:
+                raise ZeroDivisionError("Divisão por zero (resto)")
+            return esquerda % direita
         if self.operador == Operadores.MENOR:
             return 1 if esquerda < direita else 0
         if self.operador == Operadores.MAIOR:
@@ -121,6 +125,7 @@ class OpBin(Exp):
             Operadores.MENOR: '<',
             Operadores.MAIOR: '>',
             Operadores.IGUAL_IGUAL: '==',
+            Operadores.RESTO: '%',
         }
         simb = op_map.get(self.operador, '?')
         return f"({self.opEsq.gerador()} {simb} {self.opDir.gerador()})"

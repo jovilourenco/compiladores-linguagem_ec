@@ -13,6 +13,7 @@ class Operadores(Enum):
     MENOR = auto()
     MAIOR = auto()
     IGUAL_IGUAL = auto()
+    RESTO = auto()
 
 class Pontuacao(Enum):
     PAREN_ESQ = auto()

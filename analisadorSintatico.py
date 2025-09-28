@@ -93,7 +93,7 @@ class Parser:
         # olhar sem consumir: get()
         tok = self.get()
         # enquanto houver * ou /
-        while tok is not None and tok.tipo in (Operadores.MULTIPLIC, Operadores.DIVISAO):
+        while tok is not None and tok.tipo in (Operadores.MULTIPLIC, Operadores.DIVISAO, Operadores.RESTO):
             operador = tok.tipo
             # consome o operador
             self.proximo_token() # avança sem consumir
