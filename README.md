@@ -1,17 +1,18 @@
 # Teste
 
-# Compiladores - Linguagem Fun
+# Compiladores - Projeto Final
 
 **Aluno:** João Victor Lourenço da Silva
 **Matrícula:** 20220005997
 
-Este projeto é a implementação em Python de um compilador para a linguagem **FUN**, desenvolvida como parte da atividade 10 da disciplina de Construção de Compiladores I.
+Este projeto é a implementação em Python de um compilador para a linguagem **FUN + componentes** adicionais como parte do projeto final da disciplina.
 
 ---
 
 ## Sumário
 
-- Gramática da Linguagem CMD
+- Gramática da Linguagem
+- Projeto final (descrição das adições)
 - Como Executar o Compilador
 - Execução do Assembly Gerado
 - Mensagens de Erro
@@ -30,14 +31,15 @@ decl ::= vardecl | fundecl
 vardecl ::= 'var' IDENT '=' exp ';'
 fundecl ::= 'fun' IDENT '(' arglist? ')' '{' vardecl* comando* 'return' exp ';' '}'
 arglist ::= IDENT (',' IDENT)*
-comando ::= atrib | if | while | bloco
-atrib ::= IDENT '=' exp ';'
+comando ::= atrib | incdec | if | while | bloco
+atrib ::= IDENT ('=' | '+=' | '-=' | '*=' | '/=') exp ';'
+incdec :: = IDENT '++' ';' | IDENT '--' ';'
 if ::= 'if' '(' exp ')' '{' comando* '}' ( 'else' '{' comando* '}' )?
 while ::= 'while' '(' exp ')' '{' comando* '}'
 bloco ::= '{' comando* '}'
-exp ::= exp_a ( ('<' | '>' | '==') exp_a )*
+exp ::= exp_a ( ('<' | '>' | '==' | '<=' | '>=' | '!=') exp_a )*
 exp_a ::= exp_m (('+'|'-') exp_m)*
-exp_m ::= prim ((''|'/') prim)
+exp_m ::= prim (('*'|'/'|'%') prim)*
 prim ::= NUM | IDENT | IDENT '(' explist? ')' | '(' exp ')'
 explist ::= exp (',' exp)*
 ```
@@ -45,6 +47,18 @@ explist ::= exp (',' exp)*
 Algo que observo: Na implementação dessa gramática, criei uma pequena variação. Após um comando como `if` ou `while`, o programa espera um '('. o formato dos comandos é algo do tipo: `comando (expressão) '{'comando'}'`
 
 Apenas essa alteração.
+
+---
+
+## Projeto Final e adições
+
+Nesta versão final, foi solicitado que realizássemos algumas adições indicadas pelo professor. Selecionei 3 adições de complexidade baixa, uma vez que o trabalho foi realizado individualmente.
+
+- Adição do operador de resto da divisão, simbolizado por %;
+- Operadores compostos de atribuição como (+=, -=, *=, /=, ++, --);
+- Novos operadores de comparação (menor-ou-igual, maior-ou-igual, diferente);
+
+As alterações podem ser vistas na gramáticas e são refletidas no código implementado. 
 
 ---
 
@@ -67,7 +81,7 @@ O `main.py` executa as seguintes etapas, nesta ordem:
 
 Também é possível executar cada módulo individualmente (por exemplo, `analisadorLexico.py`, `analisadorSemantico.py` ou `analisadorSemantico.py`) para testes unitários.
 
-Observo que, agora, para manter o padrão de modularização, criei o analisador semântico para manter e gerenciar a tabela de símbolos e offsets do código de máquina.
+Observo que, agora, para manter o padrão de modularização, criei o analisador semântico para manter e gerenciar a tabela de símbolos e offsets do código de máquina. Antes, a semântica era gerenciada pela `arvore.py`.
 
 ---
 
@@ -91,7 +105,7 @@ ld -o saida saida.o
 
 ## Mensagens de Erro
 
-Aqui estão alguns tipos de erro que você pode encontrar:
+Aqui estão alguns tipos de erro que a linguagem costuma reportar:
 
 ### Erros Léxicos
 
