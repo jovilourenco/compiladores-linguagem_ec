@@ -1,6 +1,6 @@
 # Teste
 
-# Compiladores - Linguagem CMD
+# Compiladores - Linguagem Fun
 
 **Aluno:** João Victor Lourenço da Silva
 **Matrícula:** 20220005997
