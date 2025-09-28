@@ -67,9 +67,9 @@ def main():
         sys.exit(1)
 
     # 5) Geração da AST
-    #rich_tree = build_rich_tree(ast)
-    #print("\n--- Printa árvore com Rich ---")
-    #rprint(rich_tree)
+    rich_tree = build_rich_tree(ast)
+    print("\n--- Printa árvore com Rich ---")
+    rprint(rich_tree)
 
     print("\n--- Gerando código Assembly ---")
     os.makedirs("assemblys", exist_ok=True)

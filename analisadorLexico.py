@@ -86,21 +86,51 @@ class AnalizadorLexico:
             self.proximo_token()
             return Token(Operadores.IGUAL_IGUAL, '==', inicio, self.linha)
         
+        # Verifica se é += e ++
+        if carac == '+' and self.verificaProxToken() == '=':
+            self.proximo_token()
+            self.proximo_token()
+            return Token(Operadores.ADDEQ, '+=', inicio, self.linha)
+        if carac == '+' and self.verificaProxToken() == '+':
+            self.proximo_token()
+            self.proximo_token()
+            return Token(Operadores.INC, '++', inicio, self.linha)
+
+        # Verifica se é -= e --
+        if carac == '-' and self.verificaProxToken() == '=':
+            self.proximo_token()
+            self.proximo_token()
+            return Token(Operadores.SUBEQ, '-=', inicio, self.linha)
+        if carac == '-' and self.verificaProxToken() == '-':
+            self.proximo_token()
+            self.proximo_token()
+            return Token(Operadores.DEC, '--', inicio, self.linha)
+
+        # Verifica se é *=
+        if carac == '*' and self.verificaProxToken() == '=':
+            self.proximo_token()
+            self.proximo_token()
+            return Token(Operadores.MULEQ, '*=', inicio, self.linha)
+
+        # Verifica se é /=
+        if carac == '/' and self.verificaProxToken() == '=':
+            self.proximo_token()
+            self.proximo_token()
+            return Token(Operadores.DIVEQ, '/=', inicio, self.linha)
+        
+        # Verifica se é <=, >=, !=
         if carac == '<' and self.verificaProxToken() == '=':
             self.proximo_token()
             self.proximo_token()
             return Token(Operadores.MENOR_IGUAL, '<=', inicio, self.linha)
-
         if carac == '>' and self.verificaProxToken() == '=':
             self.proximo_token()
             self.proximo_token()
             return Token(Operadores.MAIOR_IGUAL, '>=', inicio, self.linha)
-
         if carac == '!' and self.verificaProxToken() == '=':
             self.proximo_token()
             self.proximo_token()
             return Token(Operadores.DIFERENTE, '!=', inicio, self.linha)
-
         self.proximo_token() # desloca o ponteiro
 
         # operadores

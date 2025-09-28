@@ -214,10 +214,50 @@ class Parser:
             linha = tok.linha
             pos = tok.pos
             self.proximo_token()
-            self.verificaProxToken(Pontuacao.IGUAL)
-            expr = self.analisaExpC()
-            self.verificaProxToken(Pontuacao.PONTO_VIRGULA)
-            return Assign(nome, expr, linha=linha, pos=pos)
+            
+            ntok = self.get()
+            # caso normal: '='
+            if ntok is not None and ntok.tipo == Pontuacao.IGUAL:
+                self.proximo_token()
+                expr = self.analisaExpC()
+                self.verificaProxToken(Pontuacao.PONTO_VIRGULA)
+                return Assign(nome, expr, linha=linha, pos=pos)
+
+            # atribuições compostas: '+=', '-=', '*=', '/='
+            if ntok is not None and ntok.tipo in (Operadores.ADDEQ, Operadores.SUBEQ, Operadores.MULEQ, Operadores.DIVEQ):
+                op_tok = ntok.tipo
+                self.proximo_token()  # consome operador composto
+                rhs = self.analisaExpC()
+                self.verificaProxToken(Pontuacao.PONTO_VIRGULA)
+                # verifica qual o token composto para operador binário correspondente
+                if op_tok == Operadores.ADDEQ:
+                    binop = Operadores.SOMA
+                elif op_tok == Operadores.SUBEQ:
+                    binop = Operadores.SUBTRACAO
+                elif op_tok == Operadores.MULEQ:
+                    binop = Operadores.MULTIPLIC
+                elif op_tok == Operadores.DIVEQ:
+                    binop = Operadores.DIVISAO
+                else:
+                    raise ParserError("Operador composto desconhecido")
+                from helpers.arvore import Var, OpBin 
+                return Assign(nome, OpBin(binop, Var(nome, linha=linha, pos=pos), rhs), linha=linha, pos=pos)
+
+            # incremento/decremento postfix: '++' / '--'
+            if ntok is not None and ntok.tipo in (Operadores.INC, Operadores.DEC):
+                inc_tok = ntok.tipo
+                self.proximo_token()  # consome ++/--
+                self.verificaProxToken(Pontuacao.PONTO_VIRGULA)
+                from helpers.arvore import Var, Const, OpBin
+                if inc_tok == Operadores.INC:
+                    return Assign(nome, OpBin(Operadores.SOMA, Var(nome, linha=linha, pos=pos), Const(1)), linha=linha, pos=pos)
+                else:
+                    return Assign(nome, OpBin(Operadores.SUBTRACAO, Var(nome, linha=linha, pos=pos), Const(1)), linha=linha, pos=pos)
+                
+            # se não foi nenhum caso acima, é erro sintático
+            pos_err = ntok.pos if ntok else self.pos
+            linha_err = ntok.linha if ntok else '?'
+            raise ParserError(f"Erro na linha {linha_err}, pos {pos_err}: esperado operador de atribuição ou '++'/'--', encontrado {ntok}")
         
         if tok.tipo == PalavraReservada.RETURN:
             # consumir 'return'
