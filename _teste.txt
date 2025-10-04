@@ -1,10 +1,12 @@
-fun inc(n){
-  var i = 0;
-  while (i <= n) {
-    i++;
+fun maioridade(n){
+  var x = 0;
+  if (n >= 18){
+    x = 1;
+  } else {
+    x = 0;
   }
-  return i;
+  return x;
 }
-main{
-  return inc(7);
+main {
+  return maioridade(20);
 }
