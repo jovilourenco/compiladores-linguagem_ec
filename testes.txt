@@ -1,187 +1,200 @@
-// TESTE FUN 1 — Fatorial (recursão direta)
-fun fact(n) {
+// TESTE FUN B — Resto (%) e par/ímpar
+
+fun ehImpar(n) {
   var r = 0;
-  if (n < 2) {
+  if ((n % 2) == 1) {
     r = 1;
   } else {
-    r = n * fact(n - 1);
+    r = 0;
   }
   return r;
 }
-
 main {
-  return fact(6);
+  return ehImpar(5);
 }
-*** Esperado: imprime 720 (6! = 720). Teste de recursão direta; gera chamadas com push args, call/ret, rótulos Lret_*. ***
+*** Esperado: imprime 1. Testa operador % (resto). ***
 
-// TESTE FUN 2 — Fibonacci (recursão direta, exponencial)
-fun fib(n) {
+// TESTE FUN C — Soma acumulada com += e incremento pós-fixado
+
+fun soma_ate(n) {
+  var i = 0;
+  var s = 0;
+  while (i < n) {
+  s += i;
+  i++;
+  }
+  return s;
+}
+main {
+  return soma_ate(5);
+}
+*** Esperado: imprime 10 (1+2+3+4). Testa += e i++. ***
+
+// TESTE FUN D — Incremento pós-fixado em parâmetro (efeito local)
+
+fun inc_param(n) {
+  n++;
+  return n;
+}
+main {
+  return inc_param(5);
+}
+*** Esperado: imprime 6. Testa n++ sobre parâmetro (efeito local). ***
+
+// TESTE FUN E — Decremento pós-fixado
+
+fun decParam(n) {
+  n--;
+  return n;
+}
+main {
+  return decParam(5);
+}
+*** Esperado: imprime 4. Testa n--. ***
+
+// TESTE FUN F — Operadores compostos (*=) e chamadas encadeadas
+
+fun mult2(n) {
+  n *= 2;
+  return n;
+}
+fun add_and_double(a,b) {
+  var t = a + b;
+  return mult2(t);
+}
+main {
+  return add_and_double(3,4);
+}
+*** Esperado: imprime 14. Testa *= e chamada encadeada. ***
+
+// TESTE FUN G — Erro semântico: += em variável não declarada
+
+fun broken() {
+  x += 1;
+  return 0;
+}
+main {
+  return broken();
+}
+*** Esperado: ERRO SEMÂNTICO — atribuição composta para 'x' não declarada no escopo da função. ***
+
+// TESTE FUN I — Resto por zero (erro em tempo de execução)
+
+fun divzero(n) {
+  var r = 0;
+  r = n % 0;
+  return r;
+}
+main {
+  return divzero(5);
+}
+*** Esperado: ERRO em tempo de execução — divisão por zero (ZeroDivisionError). ***
+
+// TESTE FUN J — Globais e incremento em função (modifica global)
+
+var g = 1;
+fun incg() {
+  g++;
+  return g;
+}
+main {
+  return incg();
+}
+*** Esperado: imprime 2. Testa acesso e modificação de variável global dentro da função. ***
+
+// TESTE FUN K — Comp compound assignment com leitura/escrita em locais e parâmetros
+
+fun mix(a) {
+  var x = 2;
+  x += a; 
+  a *= 3; 
+  return x + a;
+}
+main {
+  return mix(4);
+}
+*** Esperado: imprime 2+4 + 4*3 = 6 + 12 = 18. Testa += e *= com parâmetros e locais. ***
+
+// TESTE FUN L — Complexidade: recursão + resto + compostos
+
+fun f(n) {
   var r = 0;
   if (n < 2) {
-    r = 1;
+    r = n;
   } else {
-    r = fib(n - 1) + fib(n - 2);
+    r = (n % 2) + f(n - 1);
   }
   return r;
 }
-
 main {
-  return fib(7);
+  return f(5);
 }
-*** Esperado: imprime 21. Verifica chamadas recursivas com 2 argumentos nas chamadas internas e soma de retornos. ***
+*** Exemplo de recursão funcionando normalmente com operadores adicionados ***
 
-// TESTE FUN 3 — Função sem parâmetros
-fun cinco() {
-  return 5;
+// TESTE FUN M — Teste de ordem/forward (chamada para função definida depois)
+
+fun caller(n) {
+  return callee(n - 1);
 }
-
-main {
-  return cinco();
-}
-*** Esperado: imprime 5. Teste de função sem parâmetros; chamada com parênteses vazios. ***
-
-// TESTE FUN 4 — Encadeamento de funções (ordem correta)
-fun inc(n) {
-  var r = 0;
-  r = n + 1;
-  return r;
-}
-
-fun double(n) {
-  var r = 0;
-  r = n * 2;
-  return r;
-}
-
-main {
-  var tmp = 0;
-  tmp = inc(3);
-  tmp = double(tmp);
-  return tmp;
-}
-*** Esperado: imprime 8. Chama duas funções definidas antes do uso no main; checa passagem de valores e armazenamento. ***
-
-// TESTE FUN 5 — Chamada com aridade errada (mais argumentos)
-fun soma2(a,b) {
-  return a + b;
-}
-
-main {
-  return soma2(1,2,3);
-}
-*** Esperado: ERRO SEMÂNTICO — chamada para 'soma2' com aridade 3, esperada 2. ***
-
-// TESTE FUN 6 — Chamada com aridade errada (menos argumentos)
-fun soma2(a,b) {
-  return a + b;
-}
-
-main {
-  return soma2(1);
-}
-*** Esperado: ERRO SEMÂNTICO — chamada para 'soma2' com aridade 1, esperada 2. ***
-
-// TESTE FUN 7 — Chamar função não declarada
-main {
-  return naoExiste(1);
-}
-*** Esperado: ERRO SEMÂNTICO — chamada para função não declarada 'naoExiste'. ***
-
-// TESTE FUN 8 — Função que tenta usar global não-declarada (atribuição)
-fun f() {
-  var x = 1;
-  y = x + 1;
-  return y;
-}
-
-main {
-  return 0;
-}
-*** Esperado: ERRO SEMÂNTICO — atribuição para 'y' não declarada dentro da função (LHS deve existir no escopo). ***
-
-// TESTE FUN 9 — Parâmetro com mesmo nome de variável global (conflito)
-x = 10;
-
-fun g(x) {
-  return x + 1;
-}
-
-main {
-  return g(2);
-}
-*** Esperado: imprime 3. Parâmetro sombra o global (se seu semântico permitir sombra); se seu semântico proibir, ERRO SEMÂNTICO de conflito (ver regra do projeto). ***
-
-// TESTE FUN 10 — Variável local redeclarada como parâmetro (erro)
-fun h(a) {
-  var a = 2;
-  return a;
-}
-
-main {
-  return h(1);
-}
-*** Esperado: ERRO SEMÂNTICO — variável local 'a' redeclarada como parâmetro na função 'h'. ***
-
-// TESTE FUN 11 — Declaração de função dentro de função (sintaxe inválida)
-fun outer() {
-  fun inner() {
-    return 1;
-  }
-  return 0;
-}
-
-main {
-  return outer();
-}
-*** Esperado: SYNTAX_ERROR — declaração 'fun' não permitida dentro de outra função (parser não aceita). ***
-
-// TESTE FUN 12 — Mutual recursion (par order) - deve falhar se proibimos recursão mútua
-fun is_even(n) {
-  if (n == 0) { return 1; } else { return is_odd(n - 1); }
-}
-
-fun is_odd(n) {
-  if (n == 0) { return 0; } else { return is_even(n - 1); }
-}
-
-main {
-  return is_even(4);
-}
-*** Esperado: DEPENDE da checagem: se o semântico NÃO permite chamadas para funções definidas depois (evita mutual recursion), ERRO SEMÂNTICO 'chamada para função não disponível ainda' (is_odd chamada por is_even antes de registro parcial). Se seu semântico permitir (assinaturas registradas antes), espera 1. ***
-
-// TESTE FUN 13 — Forward call (fun definida depois) — deve ser ERRO se você exige ordem
-fun first(n) {
-  return second(n - 1);
-}
-
-fun second(n) {
+fun callee(n) {
   if (n < 0) { return 0; }
   return n;
 }
-
 main {
-  return first(3);
+  return caller(3);
 }
-*** Esperado: se semântico exige que funções chamem apenas funções já "parciais" (definidas antes), ERRO SEMÂNTICO 'chamada para função não disponível ainda'. Se não, resultado depende de implementação. ***
+*** Função chamada antes da declaração, mas como ele lê tudo até o main, ele já leu callee, então, funciona normalmente. ***
 
-// TESTE FUN 14 — Retorno em meio ao corpo (multiple returns)
-fun early(n) {
-  if (n < 0) { return 100; }
-  return n;
+// TESTE FUN N — Teste complexo com ++/-- e atribuicoes compostas aninhadas
+
+fun complex(n) {
+  var a = 1;
+  var b = 2;
+  a += n;
+  b = a;
+  b--;
+  a++;
+  return a + b;
 }
-
 main {
-  return early(-1);
+  return complex(3);
 }
-*** Esperado: imprime 100. Verifica que return dentro do if dispara retorno correto. ***
+*** Esperado: a = 1+3 = 4; b = 4; b-- -> 3; a++ -> 5; retorno = 5+3 = 8. ***
 
-// TESTE FUN 15 — Uso indevido de 'var' no main (sintaxe proibida)
-fun foo() {
-  return 1;
+// TESTE FUN O — Função sem parâmetros (retorno constante)
+
+fun cinco() {
+  return 5;
 }
-
 main {
-  var x = 1;
-  return 0;
+  return cinco();
 }
-*** Esperado: SYNTAX_ERROR ou ERRO SEMÂNTICO — declaração 'var' não permitida dentro de main (regra do projeto). ***
+*** Esperado: imprime 5. Teste de função sem parâmetros. ***
+
+// TESTE FUN Q — Teste de segurança: uso de ++ em expressão
+
+fun tryExpr(n) {
+  var r = 0;
+  r = n++ ;
+  return r;
+}
+main {
+  return tryExpr(5);
+}
+*** SYNTAX_ERROR pois n++ só permitido como statement. ***
+
+// TESTE FUN R — Exemplo simples (maioridade)
+
+fun maioridade(n){
+  var x = 0;
+  if (n >= 18){
+    x = 1;
+  } else {
+    x = 0;
+  }
+  return x;
+}
+main {
+  return maioridade(20);
+}
+*** Esperado: imprime 1. Mesmo que o primeiro teste (A), mantido para referência. ***

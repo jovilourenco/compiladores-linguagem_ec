@@ -1,12 +1,12 @@
-fun maioridade(n){
-  var x = 0;
-  if (n >= 18){
-    x = 1;
+fun ehImpar(n) {
+  var r = 0;
+  if ((n % 2) == 1) {
+    r = 1;
   } else {
-    x = 0;
+    r = 0;
   }
-  return x;
+  return r;
 }
 main {
-  return maioridade(20);
+  return ehImpar(5);
 }
